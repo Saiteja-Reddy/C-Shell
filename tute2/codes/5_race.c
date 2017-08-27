@@ -4,7 +4,7 @@
 int main(){
     int pid, i, loopsize;
     
-    loopsize = 1000;
+    loopsize = 100;
     pid = fork();
     
     if(pid == 0){
