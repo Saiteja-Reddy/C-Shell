@@ -68,50 +68,70 @@ char* readCommand(void)
 			char *iter = buffer;
 			iter = iter + 5;
 			char now = *(iter);
+			int state = 0;
 			while(now != '\0')
 			{
-				// printf("%c\n", now);
-				if(now == 39)
+				switch(state)
 				{
-					if(flag2 == 0)
-						act = 39;
-					flag1 = !(flag1);
-					if(flag1 == 0)
-					{
-						act = (flag2 == 1)?34:0;
-						if(act == 0)
+					case 0:
+						switch(now)
 						{
-							iter = iter + 1;
-							now = *(iter);							
-							continue;
+							case 34:
+								state = 2;
+								break;
+							case 39:
+								state = 3;
+								break;
+							case 32:
+								break;
+							default:
+							printf("%c", now);
+								state = 1;
+								break;
 						}
-					}
-				}
-				
-				if(now == 34)
-				{
-					if(flag1 == 0)
-						act = 34;
-					flag2 = !(flag2);
-					if(flag2 == 0)
-					{
-						act = (flag1 == 1)?39:0;	
-						if(act == 0)
+						break;
+					case 1:
+						switch(now)
 						{
-							iter = iter + 1;
-							now = *(iter);							
-							continue;
+							case 34:
+								state = 2;
+								break;
+							case 39:
+								state = 3;
+								break;
+							case 32:
+							printf("%c", now);
+								state = 0;
+								break;
+							default:
+								printf("%c",now);
+								break;
 						}
-					}
-				}
+						break;
+					case 2:
+						switch(now)
+						{
+							case 34:
+								state = 1;
+								break;
+							default:
+							printf("%c", now);
+								break;
+						}
+						break;
 
-				if(now == 32 && (act != 0))
-				{
-					printf(" ");
+					case 3:
+						switch(now)
+						{
+							case 39:
+								state = 1;
+								break;
+							default:
+							printf("%c", now);
+								break;
+						}
+						break;
 				}
-				else if(now != act && now != 32)
-					printf("%c", now);
-				// printf("%d %d - %c\n", flag1, flag2, now );
 				iter = iter + 1;
 				now = *(iter);
 			}
