@@ -12,7 +12,7 @@ char* readCommand(void);
 char hostname[256];
 char username[256];
 char cwd[1024];
-int pos;
+char *wd;
 
 int main(int argc, char const *argv[])
 {
@@ -22,24 +22,7 @@ int main(int argc, char const *argv[])
 	gethostname(hostname, 200);
 	getwd(cwd);
 	strcpy(username,uinfo->pw_name) ;
-	pos = 0;
-	for (i = 0; i < strlen(cwd); ++i)
-	{
-		flag = 0;
-		for (j = 0; j < strlen(username) ; ++j)
-		{
-			if(cwd[i + j] != username[j])
-			{
-				flag = 1;
-				break;
-			}
-		}
-		if(flag == 0)
-		{
-			pos = i+j;
-			break;	
-		}
-	}
+	wd = strstr(cwd, username) + strlen(username);
 	shell_loop();
 	return 0;
 }
@@ -50,7 +33,7 @@ void shell_loop(void)
 
 	while(1)
 	{
-		printf("<%s@%s:~%s>", username, hostname, cwd+pos);
+		printf("<%s@%s:~%s>", username, hostname, wd);
 		in_line = readCommand();
 		printf("%s\n", in_line);
 	}
