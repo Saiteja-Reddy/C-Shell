@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <string.h>
+#include <errno.h>
 #include <stdlib.h>
 
 #define TOKEN_BUFSIZE 64
@@ -13,11 +14,19 @@ void shell_loop(void);
 char* readCommand(void);
 int launchProcess(char **);
 char **splitCommand(char *);
+int executeCommand(char **);
+int run_echo(char **);
+int run_ls(char **);
+int run_cd(char **);
+int run_pwd(char **);
+int run_exit(char **);
 
 char hostname[256];
 char username[256];
 char cwd[1024];
 char *wd;
+char *builtin[] = {"echo", "cd", "ls", "pwd", "exit"}; // HELP
+int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_exit};
 
 int main(int argc, char const *argv[])
 {
@@ -25,9 +34,7 @@ int main(int argc, char const *argv[])
 	int userid = getuid();
 	struct passwd *uinfo = getpwuid(userid);
 	gethostname(hostname, 200);
-	getwd(cwd);
 	strcpy(username,uinfo->pw_name) ;
-	wd = strstr(cwd, username) + strlen(username);
 	shell_loop();
 	return 0;
 }
@@ -39,11 +46,13 @@ void shell_loop(void)
 	int out;
 	while(1)
 	{
-		printf("<%s@%s:~%s>", username, hostname, wd);
+		getwd(cwd);
+		wd = strstr(cwd, username) + strlen(username);		
+		printf("<%s@%s:~%s >", username, hostname, wd);
 		in_line = readCommand();
 		args = splitCommand(in_line);
-		out = launchProcess(args);
-		printf("%s\n", in_line);
+		out = executeCommand(args);
+		// printf("%s\n", in_line);
 	}
 }
 
@@ -84,7 +93,10 @@ int launchProcess(char **args)
 	pid = fork();
 	if(pid == 0)
 	{
-		execvp(args[0], args);
+		if(execvp(args[0], args) == -1)
+		{
+			perror("Shell"); // Print Approporiate Error
+		}
 	}
 	else if(pid > 0)
 	{
@@ -95,5 +107,63 @@ int launchProcess(char **args)
 		fprintf(stderr, "shell: Error Forking Child\n");
 		exit(1);		
 	}
+	return 1;
+}
+
+int executeCommand(char **args)
+{
+	if(args[0] == NULL)
+		return 1;
+
+	int i;
+	int count = sizeof(builtin)/sizeof(char *);
+	for (i = 0; i < count; ++i)
+	{
+		if(strcmp(builtin[i], args[0]) == 0)
+			return (*builtin_func[i])(args);
+	}
+
+	// printf("%s\n", args[0]);
+	return launchProcess(args);
+}
+
+int run_echo(char **args)
+{
+	printf("IN ECHO : %s\n", args[0]);
+	return 1;
+}
+
+int run_cd(char **args)
+{
+	printf("IN CD : %s\n", args[0]);
+	if(args[1] == NULL)
+	{
+		fprintf(stderr,"Please Enter an argument for cd\n");
+		return 1;
+	}
+	if(chdir(args[1]) != 0)
+	{
+		perror("Shell");
+	}
+	return 1;
+}
+
+int run_ls(char **args)
+{
+	printf("IN LS : %s\n", args[0]);
+	return launchProcess(args);
+}
+
+int run_pwd(char **args)
+{
+	printf("IN PWD : %s\n", args[0]);
+	printf("%s\n", cwd);
+	return 1;
+}
+
+int run_exit(char **args)
+{
+	printf("IN EXIT : %s\n", args[0]);
+	// exit(1);
 	return 1;
 }
