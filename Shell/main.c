@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define COMMAND_BUF_SIZE 1024
+
 void shell_loop(void);
 char* readCommand(void);
 
@@ -41,7 +43,13 @@ void shell_loop(void)
 
 char* readCommand(void)
 {
-	char *buffer = malloc(sizeof(char) * 128);
+	int bufsize = COMMAND_BUF_SIZE;
+	char *buffer = malloc(sizeof(char) * bufsize);
+	if(!buffer)
+	{
+		fprintf(stderr, "shell: Allocation Error\n" );
+		exit(1);
+	}	
 	int c = 0;
 	int pos = 0;
 	while(1)
@@ -54,7 +62,19 @@ char* readCommand(void)
 		}
 		else
 		{
-			buffer[pos++] = c;
+			buffer[pos] = c;
+		}
+		pos++;
+		if(pos >= bufsize)
+		{
+			bufsize += COMMAND_BUF_SIZE;
+			buffer = realloc(buffer, bufsize);
+			if(!buffer)
+			{
+				fprintf(stderr, "shell: Allocation Error\n");
+				exit(1);
+			}
 		}
 	}
 }
+
