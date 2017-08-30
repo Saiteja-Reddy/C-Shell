@@ -232,20 +232,18 @@ int printFileDir(char *temp, int flags[])
 		struct dirent *direc_entry;
 		DIR* direc_stream = opendir(temp);
 		direc_entry = readdir(direc_stream);
-		char full_path[1000];
 		while (direc_entry)
 		{
-				char* fileName = direc_entry->d_name;
+				char *fileName = direc_entry->d_name;
 				if(fileName[0] != '.' || flags[0] == 1 )
-				{				
+				{
 					if(flags[1] == 1)
 					{
 						struct stat fileStat;
-						sprintf(full_path, "%s/%s",temp,fileName); // Important to append Path
-						stat(full_path, &fileStat);
+						stat(direc_entry->d_name, &fileStat);
 						PrintFileInfo(fileStat);
 					}
-					printf("%s\n", fileName);
+					printf("%s\n", direc_entry->d_name);
 				}
 			direc_entry = readdir(direc_stream);
 		}
@@ -256,12 +254,12 @@ int printFileDir(char *temp, int flags[])
 	else
 	{
 		if(flags[1] == 1)
-		{		
-			struct stat fileStat;
-			stat(temp, &fileStat);
-			PrintFileInfo(fileStat);
-		}		
-		printf("%s\n", temp);
+			{		
+				struct stat fileStat;
+				stat(temp, &fileStat);
+				PrintFileInfo(fileStat);
+			}		
+			printf("%s\n", temp);
 		return 1;
 	}	
 }
