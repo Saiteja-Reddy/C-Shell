@@ -1,0 +1,1 @@
+gcc  main.c ls_implement.c -o out -> To run, Shell.
