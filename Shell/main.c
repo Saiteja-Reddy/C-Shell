@@ -43,8 +43,8 @@ void shell_loop(void)
 {
 	char *in_line;
 	char **args;
-	int out;
-	while(1)
+	int out = 1;
+	while(out)
 	{
 		getwd(cwd);
 		wd = strstr(cwd, username) + strlen(username);		
@@ -52,7 +52,7 @@ void shell_loop(void)
 		in_line = readCommand();
 		args = splitCommand(in_line);
 		out = executeCommand(args);
-		// printf("%s\n", in_line);
+		// printf("%d\n", out);
 	}
 }
 
@@ -97,6 +97,7 @@ int launchProcess(char **args)
 		{
 			perror("Shell"); // Print Approporiate Error
 		}
+		exit(1);
 	}
 	else if(pid > 0)
 	{
@@ -165,5 +166,5 @@ int run_exit(char **args)
 {
 	printf("IN EXIT : %s\n", args[0]);
 	// exit(1);
-	return 1;
+	return 0;
 }
