@@ -1,167 +1,8 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/utsname.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <grp.h>
-#include <uuid/uuid.h>
-#include <time.h>
-
-#define TOKEN_BUFSIZE 64
-#define DELIMITERS " \t\r\n\a"
-
-void shell_loop(void);
-char* readCommand(void);
-int launchProcess(char **);
-char **splitCommand(char *);
-int executeCommand(char **);
-int run_echo(char **);
-int run_ls(char **);
-int run_cd(char **);
-int run_pwd(char **);
-int run_exit(char **);
-int printFileDir(char *, int []);
-char f_type(mode_t);
-char* getMonth(int);
-void PrintFileInfo(struct stat);
-
-char hostname[256];
-char username[256];
-char cwd[1024];
-char *wd;
-char *builtin[] = {"echo", "cd", "ls", "pwd", "exit"}; // HELP
-int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_exit};
-
-int main(int argc, char const *argv[])
-{
-	int i, j, flag;
-	int userid = getuid();
-	struct passwd *uinfo = getpwuid(userid);
-	gethostname(hostname, 200);
-	strcpy(username, uinfo->pw_name) ;
-	shell_loop();
-	return 0;
-}
-
-void shell_loop(void)
-{
-	char *in_line;
-	char **args;
-	int out = 1;
-	while (out)
-	{
-		getwd(cwd);
-		wd = strstr(cwd, username) + strlen(username);
-		printf("<%s@%s:~%s >", username, hostname, wd);
-		in_line = readCommand();
-		args = splitCommand(in_line);
-		out = executeCommand(args);
-		// printf("%d\n", out);
-	}
-}
-
-char* readCommand(void)
-{
-	unsigned long bufsize = 0;
-	char *buffer;
-	getline(&buffer, &bufsize, stdin);
-	return buffer;
-}
-
-char **splitCommand(char *line)
-{
-	unsigned long bufsize = TOKEN_BUFSIZE;
-	int position = 0;
-	char **args = malloc(sizeof(char*) * bufsize);
-	char *arg;
-	if (!args)
-	{
-		fprintf(stderr, "shell: Allocation Error\n");
-		exit(1);
-	}
-
-	arg = strtok(line, DELIMITERS);
-	while (arg != NULL)
-	{
-		args[position++] = arg;
-		arg = strtok(NULL, DELIMITERS);
-	}
-	args[position] = NULL;
-	return args;
-}
-
-int launchProcess(char **args)
-{
-	pid_t pid;
-
-	pid = fork();
-	if (pid == 0)
-	{
-		if (execvp(args[0], args) == -1)
-		{
-			perror("Shell"); // Print Approporiate Error
-		}
-		exit(1);
-	}
-	else if (pid > 0)
-	{
-		wait(NULL);
-	}
-	else
-	{
-		fprintf(stderr, "shell: Error Forking Child\n");
-		exit(1);
-	}
-	return 1;
-}
-
-int executeCommand(char **args)
-{
-	if (args[0] == NULL)
-		return 1;
-
-	int i;
-	int count = sizeof(builtin) / sizeof(char *);
-	for (i = 0; i < count; ++i)
-	{
-		if (strcmp(builtin[i], args[0]) == 0)
-			return (*builtin_func[i])(args);
-	}
-
-	// printf("%s\n", args[0]);
-	return launchProcess(args);
-}
-
-int run_echo(char **args)
-{
-	printf("IN ECHO : %s\n", args[0]);
-	return 1;
-}
-
-int run_cd(char **args)
-{
-	printf("IN CD : %s\n", args[0]);
-	if (args[1] == NULL)
-	{
-		fprintf(stderr, "Please Enter an argument for cd\n");
-		return 1;
-	}
-	if (chdir(args[1]) != 0)
-	{
-		perror("Shell");
-	}
-	return 1;
-}
+#include "ls_implement.h"
 
 int run_ls(char **args)
 {
-	printf("IN LS : %s\n", args[0]);
-
+	// printf("IN LS : %s\n", args[0]);
 	char *temp;
 	int i = 1;
 	int j;
@@ -231,19 +72,45 @@ int printFileDir(char *temp, int flags[])
 			printf("%s:\n", temp );
 		struct dirent *direc_entry;
 		DIR* direc_stream = opendir(temp);
+		char full_path[1000];
+		printf("%s:\n", temp);
+		if(flags[1] == 1)
+		{
+			printf("total: %lld\n", getTotalBlocks(temp));
+		}
 		direc_entry = readdir(direc_stream);
 		while (direc_entry)
 		{
-				char *fileName = direc_entry->d_name;
+				char* fileName = direc_entry->d_name;
 				if(fileName[0] != '.' || flags[0] == 1 )
-				{
+				{				
+					struct stat fileStat;
 					if(flags[1] == 1)
 					{
-						struct stat fileStat;
-						stat(direc_entry->d_name, &fileStat);
+						sprintf(full_path, "%s/%s",temp,fileName); // Important to append Path
+						lstat(full_path, &fileStat); // Important to put lstat
+						// printf("%d\n", fileStat.st_blocks );
 						PrintFileInfo(fileStat);
 					}
-					printf("%s\n", direc_entry->d_name);
+					if(S_ISLNK(fileStat.st_mode) && flags[1] == 1)
+					{
+						char linkpoints[1024];
+						int temp = readlink(full_path, linkpoints, 1024);
+						if(temp != -1)
+						{
+							linkpoints[temp] = '\0';
+							printf("%s -> %s \n",fileName,linkpoints);
+						}
+						else
+						{
+							printf("%s\n", fileName);
+						}
+					}
+					else
+					{
+						printf("%s\n", fileName);
+					}
+
 				}
 			direc_entry = readdir(direc_stream);
 		}
@@ -254,15 +121,38 @@ int printFileDir(char *temp, int flags[])
 	else
 	{
 		if(flags[1] == 1)
-			{		
-				struct stat fileStat;
-				stat(temp, &fileStat);
-				PrintFileInfo(fileStat);
-			}		
-			printf("%s\n", temp);
+		{		
+			struct stat fileStat;
+			stat(temp, &fileStat);
+			PrintFileInfo(fileStat);
+		}		
+		printf("%s\n", temp);
 		return 1;
 	}	
 }
+
+long long getTotalBlocks(char* temp)
+{
+	if(!(temp[0] == '.' || strlen(temp) == 1))
+		printf("%s:\n", temp );
+	struct dirent *direc_entry;
+	DIR* direc_stream = opendir(temp);
+	char full_path[1000];
+	direc_entry = readdir(direc_stream);
+	long long total_blocks = 0;
+	while (direc_entry)
+	{
+			char* fileName = direc_entry->d_name;
+					struct stat fileStat;
+					sprintf(full_path, "%s/%s",temp,fileName); // Important to append Path
+					lstat(full_path, &fileStat); // Important to put lstat
+					total_blocks +=fileStat.st_blocks;
+		direc_entry = readdir(direc_stream);
+	}
+	closedir(direc_stream);
+	return total_blocks;
+}
+
 void PrintFileInfo(struct stat fileStat)
 {
 	printf("%c", f_type(fileStat.st_mode));
@@ -371,17 +261,4 @@ char* getMonth(int i)
         break;
     }
     return (month);
-}
-int run_pwd(char **args)
-{
-	printf("IN PWD : %s\n", args[0]);
-	printf("%s\n", cwd);
-	return 1;
-}
-
-int run_exit(char **args)
-{
-	printf("IN EXIT : %s\n", args[0]);
-	// exit(1);
-	return 0;
 }
