@@ -29,6 +29,7 @@ int printFileDir(char *, int []);
 char f_type(mode_t);
 char* getMonth(int);
 void PrintFileInfo(struct stat);
+long long getTotalBlocks(char*);
 
 char hostname[256];
 char username[256];
@@ -160,8 +161,7 @@ int run_cd(char **args)
 
 int run_ls(char **args)
 {
-	printf("IN LS : %s\n", args[0]);
-
+	// printf("IN LS : %s\n", args[0]);
 	char *temp;
 	int i = 1;
 	int j;
@@ -231,21 +231,45 @@ int printFileDir(char *temp, int flags[])
 			printf("%s:\n", temp );
 		struct dirent *direc_entry;
 		DIR* direc_stream = opendir(temp);
-		direc_entry = readdir(direc_stream);
 		char full_path[1000];
+		printf("%s:\n", temp);
+		if(flags[1] == 1)
+		{
+			printf("total: %lld\n", getTotalBlocks(temp));
+		}
+		direc_entry = readdir(direc_stream);
 		while (direc_entry)
 		{
 				char* fileName = direc_entry->d_name;
 				if(fileName[0] != '.' || flags[0] == 1 )
 				{				
+					struct stat fileStat;
 					if(flags[1] == 1)
 					{
-						struct stat fileStat;
 						sprintf(full_path, "%s/%s",temp,fileName); // Important to append Path
-						stat(full_path, &fileStat);
+						lstat(full_path, &fileStat); // Important to put lstat
+						// printf("%d\n", fileStat.st_blocks );
 						PrintFileInfo(fileStat);
 					}
-					printf("%s\n", fileName);
+					if(S_ISLNK(fileStat.st_mode) && flags[1] == 1)
+					{
+						char linkpoints[1024];
+						int temp = readlink(full_path, linkpoints, 1024);
+						if(temp != -1)
+						{
+							linkpoints[temp] = '\0';
+							printf("%s -> %s \n",fileName,linkpoints);
+						}
+						else
+						{
+							printf("%s\n", fileName);
+						}
+					}
+					else
+					{
+						printf("%s\n", fileName);
+					}
+
 				}
 			direc_entry = readdir(direc_stream);
 		}
@@ -265,6 +289,29 @@ int printFileDir(char *temp, int flags[])
 		return 1;
 	}	
 }
+
+long long getTotalBlocks(char* temp)
+{
+	if(!(temp[0] == '.' || strlen(temp) == 1))
+		printf("%s:\n", temp );
+	struct dirent *direc_entry;
+	DIR* direc_stream = opendir(temp);
+	char full_path[1000];
+	direc_entry = readdir(direc_stream);
+	long long total_blocks = 0;
+	while (direc_entry)
+	{
+			char* fileName = direc_entry->d_name;
+					struct stat fileStat;
+					sprintf(full_path, "%s/%s",temp,fileName); // Important to append Path
+					lstat(full_path, &fileStat); // Important to put lstat
+					total_blocks +=fileStat.st_blocks;
+		direc_entry = readdir(direc_stream);
+	}
+	closedir(direc_stream);
+	return total_blocks;
+}
+
 void PrintFileInfo(struct stat fileStat)
 {
 	printf("%c", f_type(fileStat.st_mode));
