@@ -25,6 +25,8 @@ char cwd[1024];
 char *wd;
 char *builtin[] = {"echo", "cd", "ls", "pwd", "exit"}; // HELP
 int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_exit};
+int background[1000] = {0};
+int bgpointer = 0;
 
 int main(int argc, char const *argv[])
 {
@@ -39,6 +41,7 @@ int main(int argc, char const *argv[])
 
 void shell_loop(void)
 {
+	int i;
 	char *in_line;
 	char **args;
 	int out = 1;
@@ -64,7 +67,6 @@ void shell_loop(void)
 		}
 		else
 		{
-			int i;
 			for (i = 0; i < *(back_args_len) - 1; ++i)
 			{
 				bg = 1;
@@ -77,6 +79,15 @@ void shell_loop(void)
 			args = splitCommand(backArgs[i], back_argCommand_len);		
 			out = executeCommand(args, bg);
 		}
+
+		for (i = 0; i < bgpointer; ++i)
+		{
+			pid_t ch_pid = background[i];
+			pid_t return_pid = waitpid(ch_pid, NULL, WNOHANG);
+			if(return_pid == ch_pid)
+				printf("[-] Done %d \n" , ch_pid);
+		}
+				
 	}
 	free(args);
 	free(backArgs);
@@ -190,9 +201,12 @@ int launchProcess(char **args, int bg)
 	else if (pid > 0)
 	{
 		if(bg == 0)
+		{
 			wait(NULL);
+		}
 		else
 		{
+			background[bgpointer++] = pid;
 			printf("[+] %d %s\n" , pid, args[0]);
 		}
 	}
