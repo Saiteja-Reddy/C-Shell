@@ -2,12 +2,13 @@
 
 #define TOKEN_BUFSIZE 64
 #define DELIMITERS " \t\r\n\a"
+#define BACK_DELIMITERS "&"
 
 void shell_loop(void);
-char* readCommand(void);
-int launchProcess(char **);
-char **splitCommand(char *);
-int executeCommand(char **);
+int launchProcess(char **, int);
+char **splitCommand(char *, int*);
+char **splitBackCommand(char *, int*);
+int executeCommand(char **, int);
 int run_echo(char **);
 int run_cd(char **);
 int run_pwd(char **);
@@ -15,6 +16,8 @@ int run_exit(char **);
 void checkEcho(char *);
 char* addToPrintBuf(char *, char , int *);
 char* echoOutLine(int *, char *); // Pre Defs
+char* getCommand(void);
+char* idCommand(char *);
 
 char hostname[256];
 char username[256];
@@ -39,23 +42,57 @@ void shell_loop(void)
 	char *in_line;
 	char **args;
 	int out = 1;
+	int *args_len = (int*)malloc(sizeof(int));
+	char **backArgs;
+	int *back_args_len = (int*)malloc(sizeof(int));
+	int *back_argCommand_len = (int*)malloc(sizeof(int));
+	int bg = 0;
+
 	while (out)
 	{
+		bg = 0;
 		getwd(cwd);
 		wd = strstr(cwd, username) + strlen(username);
-		printf("<%s@%s:~%s >", username, hostname, wd);
-		in_line = readCommand();
-		args = splitCommand(in_line);
-		out = executeCommand(args);
-		// printf("%d\n", out);
+		printf("<%s@%s:~%s > ", username, hostname, wd);
+		in_line = getCommand();
+		backArgs = splitBackCommand(in_line, back_args_len);
+		if(*back_args_len == 1)
+		{
+			in_line = idCommand(in_line);
+			args = splitCommand(in_line, args_len);		
+			out = executeCommand(args, bg);
+		}
+		else
+		{
+			int i;
+			for (i = 0; i < *(back_args_len) - 1; ++i)
+			{
+				bg = 1;
+				in_line = idCommand(backArgs[i]);
+				args = splitCommand(backArgs[i], back_argCommand_len);		
+				out = executeCommand(args, bg);
+			}	
+			bg = 0;
+			in_line = idCommand(backArgs[i]);
+			args = splitCommand(backArgs[i], back_argCommand_len);		
+			out = executeCommand(args, bg);
+		}
 	}
+	free(args);
+	free(backArgs);
+	free(in_line);	
 }
 
-char* readCommand(void)
+char* getCommand(void)
 {
 	unsigned long bufsize = 0;
 	char *buffer;
 	getline(&buffer, &bufsize, stdin);
+	return buffer;
+}
+
+char* idCommand(char * buffer)
+{
 	char *cpBuffer = (char*)malloc(sizeof(char)*1000);
 	strcpy(cpBuffer,buffer);
 
@@ -73,7 +110,31 @@ char* readCommand(void)
 	return buffer;
 }
 
-char **splitCommand(char *line)
+char **splitBackCommand(char *line, int* back_args_len)
+{
+	unsigned long bufsize = TOKEN_BUFSIZE;
+	int position = 0;
+	char **args = malloc(sizeof(char*) * bufsize);
+	char *arg;
+	if (!args)
+	{
+		fprintf(stderr, "shell: Allocation Error\n");
+		exit(1);
+	}
+
+	arg = strtok(line, BACK_DELIMITERS);
+	while (arg != NULL)
+	{
+		args[position++] = arg;
+		// printf("%s\n", arg);		
+		arg = strtok(NULL, BACK_DELIMITERS);
+	}
+	args[position] = NULL;
+	*back_args_len = position;
+	return args;
+}
+
+char **splitCommand(char *line, int* args_len)
 {
 	unsigned long bufsize = TOKEN_BUFSIZE;
 	int position = 0;
@@ -92,25 +153,44 @@ char **splitCommand(char *line)
 		arg = strtok(NULL, DELIMITERS);
 	}
 	args[position] = NULL;
+	*args_len = position;
 	return args;
 }
 
-int launchProcess(char **args)
+int launchProcess(char **args, int bg)
 {
 	pid_t pid;
 
 	pid = fork();
 	if (pid == 0)
 	{
+		if(bg == 1)
+		{
+			// printf("Background\n");
+			if(setpgid(0,0) == 0)
+			{
+				printf("Process in BG now :\n");
+			}
+			else
+			{
+				fprintf(stderr, "shell: Unable to start as BG Process\n");
+				exit(1);
+			}
+		}
+
 		if (execvp(args[0], args) == -1)
 		{
 			perror("Shell"); // Print Approporiate Error
 		}
+		
 		exit(1);
 	}
 	else if (pid > 0)
 	{
-		wait(NULL);
+		if(bg == 0)
+			wait(NULL);
+		// else
+			// waitpid()
 	}
 	else
 	{
@@ -120,8 +200,10 @@ int launchProcess(char **args)
 	return 1;
 }
 
-int executeCommand(char **args)
+int executeCommand(char **args, int bg)
 {
+	// if(bg == 1)
+		// printf("Background Must be Run\n");
 	if (args[0] == NULL)
 		return 1;
 
@@ -134,7 +216,7 @@ int executeCommand(char **args)
 	}
 
 	// printf("%s\n", args[0]);
-	return launchProcess(args);
+	return launchProcess(args, bg);
 }
 
 int run_cd(char **args)
