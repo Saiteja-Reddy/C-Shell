@@ -112,7 +112,7 @@ void checkEcho(char *buffer)
 	for (i = 0; i < position; ++i)
 	{
 		printf("%s", allOut[i]);
-		// free(allOut[i]);
+		// free(allout[])
 	}
 }
 
@@ -202,7 +202,7 @@ char* echoOutLine(int *statePtr, char *iter)
 
 char* addToPrintBuf(char *printBuffer, char now, int *position)
 {
-	int pbufsize = 100;
+	int pbufsize = 1000;
 	char c = now;
     printBuffer[*(position)] = c;
 	*(position) = *(position) + 1;
