@@ -60,8 +60,6 @@ void shell_loop(void)
 	{
 		background_process[i] = malloc(sizeof(char)*100);
 	}
-	int bg = 0 , j;
-
 	while (out)
 	{
 		bg = 0;
