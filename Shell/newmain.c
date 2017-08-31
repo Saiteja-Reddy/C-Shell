@@ -169,7 +169,9 @@ int launchProcess(char **args, int bg)
 			// printf("Background\n");
 			if(setpgid(0,0) == 0)
 			{
-				printf("Process in BG now :\n");
+				// pid_t processid;
+				// processid = getpid();
+				// printf("Process in BG now  [+]%d\n" , processid);
 			}
 			else
 			{
@@ -182,15 +184,17 @@ int launchProcess(char **args, int bg)
 		{
 			perror("Shell"); // Print Approporiate Error
 		}
-		
+
 		exit(1);
 	}
 	else if (pid > 0)
 	{
 		if(bg == 0)
 			wait(NULL);
-		// else
-			// waitpid()
+		else
+		{
+			printf("[+] %d %s\n" , pid, args[0]);
+		}
 	}
 	else
 	{
