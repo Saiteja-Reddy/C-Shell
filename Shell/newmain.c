@@ -14,7 +14,7 @@ int run_pwd(char **);
 int run_exit(char **);
 void checkEcho(char *);
 char* addToPrintBuf(char *, char , int *);
-char* echoOutLine(int *, char *);
+char* echoOutLine(int *, char *); // Pre Defs
 
 char hostname[256];
 char username[256];
@@ -73,6 +73,100 @@ char* readCommand(void)
 	return buffer;
 }
 
+char **splitCommand(char *line)
+{
+	unsigned long bufsize = TOKEN_BUFSIZE;
+	int position = 0;
+	char **args = malloc(sizeof(char*) * bufsize);
+	char *arg;
+	if (!args)
+	{
+		fprintf(stderr, "shell: Allocation Error\n");
+		exit(1);
+	}
+
+	arg = strtok(line, DELIMITERS);
+	while (arg != NULL)
+	{
+		args[position++] = arg;
+		arg = strtok(NULL, DELIMITERS);
+	}
+	args[position] = NULL;
+	return args;
+}
+
+int launchProcess(char **args)
+{
+	pid_t pid;
+
+	pid = fork();
+	if (pid == 0)
+	{
+		if (execvp(args[0], args) == -1)
+		{
+			perror("Shell"); // Print Approporiate Error
+		}
+		exit(1);
+	}
+	else if (pid > 0)
+	{
+		wait(NULL);
+	}
+	else
+	{
+		fprintf(stderr, "shell: Error Forking Child\n");
+		exit(1);
+	}
+	return 1;
+}
+
+int executeCommand(char **args)
+{
+	if (args[0] == NULL)
+		return 1;
+
+	int i;
+	int count = sizeof(builtin) / sizeof(char *);
+	for (i = 0; i < count; ++i)
+	{
+		if (strcmp(builtin[i], args[0]) == 0)
+			return (*builtin_func[i])(args);
+	}
+
+	// printf("%s\n", args[0]);
+	return launchProcess(args);
+}
+
+int run_cd(char **args)
+{
+	printf("IN CD : %s\n", args[0]);
+	if (args[1] == NULL)
+	{
+		fprintf(stderr, "Please Enter an argument for cd\n");
+		return 1;
+	}
+	if (chdir(args[1]) != 0)
+	{
+		perror("Shell");
+	}
+	return 1;
+}
+
+int run_pwd(char **args)
+{
+	printf("IN PWD : %s\n", args[0]);
+	printf("%s\n", cwd);
+	return 1;
+}
+
+int run_exit(char **args)
+{
+	printf("IN EXIT : %s\n", args[0]);
+	// exit(1);
+	return 0;
+}
+
+///Echo Here 
 void checkEcho(char *buffer)
 {
 	unsigned long bufsize = 0;
@@ -220,101 +314,9 @@ char* addToPrintBuf(char *printBuffer, char now, int *position)
     return printBuffer;
 }
 
-char **splitCommand(char *line)
-{
-	unsigned long bufsize = TOKEN_BUFSIZE;
-	int position = 0;
-	char **args = malloc(sizeof(char*) * bufsize);
-	char *arg;
-	if (!args)
-	{
-		fprintf(stderr, "shell: Allocation Error\n");
-		exit(1);
-	}
-
-	arg = strtok(line, DELIMITERS);
-	while (arg != NULL)
-	{
-		args[position++] = arg;
-		arg = strtok(NULL, DELIMITERS);
-	}
-	args[position] = NULL;
-	return args;
-}
-
-int launchProcess(char **args)
-{
-	pid_t pid;
-
-	pid = fork();
-	if (pid == 0)
-	{
-		if (execvp(args[0], args) == -1)
-		{
-			perror("Shell"); // Print Approporiate Error
-		}
-		exit(1);
-	}
-	else if (pid > 0)
-	{
-		wait(NULL);
-	}
-	else
-	{
-		fprintf(stderr, "shell: Error Forking Child\n");
-		exit(1);
-	}
-	return 1;
-}
-
-int executeCommand(char **args)
-{
-	if (args[0] == NULL)
-		return 1;
-
-	int i;
-	int count = sizeof(builtin) / sizeof(char *);
-	for (i = 0; i < count; ++i)
-	{
-		if (strcmp(builtin[i], args[0]) == 0)
-			return (*builtin_func[i])(args);
-	}
-
-	// printf("%s\n", args[0]);
-	return launchProcess(args);
-}
-
 int run_echo(char **args)
 {
 	// printf("IN ECHO : %s\n", args[0]);
 	return 1;
 }
-
-int run_cd(char **args)
-{
-	printf("IN CD : %s\n", args[0]);
-	if (args[1] == NULL)
-	{
-		fprintf(stderr, "Please Enter an argument for cd\n");
-		return 1;
-	}
-	if (chdir(args[1]) != 0)
-	{
-		perror("Shell");
-	}
-	return 1;
-}
-
-int run_pwd(char **args)
-{
-	printf("IN PWD : %s\n", args[0]);
-	printf("%s\n", cwd);
-	return 1;
-}
-
-int run_exit(char **args)
-{
-	printf("IN EXIT : %s\n", args[0]);
-	// exit(1);
-	return 0;
-}
+// Echo Ends Here
