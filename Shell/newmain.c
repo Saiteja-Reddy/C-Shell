@@ -26,6 +26,7 @@ char *wd;
 char *builtin[] = {"echo", "cd", "ls", "pwd", "exit"}; // HELP
 int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_exit};
 int background[1000] = {0};
+char **background_process;
 int bgpointer = 0;
 
 int main(int argc, char const *argv[])
@@ -50,6 +51,11 @@ void shell_loop(void)
 	int *back_args_len = (int*)malloc(sizeof(int));
 	int *back_argCommand_len = (int*)malloc(sizeof(int));
 	int bg = 0;
+	background_process = malloc(sizeof(char*)*1000);
+	for (i = 0; i < 1000; ++i)
+	{
+		background_process[i] = malloc(sizeof(char)*100);
+	}
 
 	while (out)
 	{
@@ -85,9 +91,11 @@ void shell_loop(void)
 			pid_t ch_pid = background[i];
 			pid_t return_pid = waitpid(ch_pid, NULL, WNOHANG);
 			if(return_pid == ch_pid)
-				printf("[-] Done %d \n" , ch_pid);
-		}
-				
+				{
+					printf("[-] Done %d %s\n" , ch_pid, background_process[i]);
+					free(background_process[i]);
+				}
+		}		
 	}
 	free(args);
 	free(backArgs);
@@ -206,6 +214,7 @@ int launchProcess(char **args, int bg)
 		}
 		else
 		{
+			strcpy(background_process[bgpointer] , args[0]);
 			background[bgpointer++] = pid;
 			printf("[+] %d %s\n" , pid, args[0]);
 		}
