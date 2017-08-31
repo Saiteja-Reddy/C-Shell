@@ -3,10 +3,12 @@
 #define TOKEN_BUFSIZE 64
 #define DELIMITERS " \t\r\n\a"
 #define BACK_DELIMITERS "&"
+#define SEMICOLON_DELIMITERS ";"
 
 void shell_loop(void);
 int launchProcess(char **, int);
 char **splitCommand(char *, int*);
+char **semicolonSeperator(char *, int*);
 char **splitBackCommand(char *, int*);
 int executeCommand(char **, int);
 int run_echo(char **);
@@ -44,9 +46,11 @@ void shell_loop(void)
 	int out = 1;
 	int *args_len = (int*)malloc(sizeof(int));
 	char **backArgs;
+	char **commands;
 	int *back_args_len = (int*)malloc(sizeof(int));
+	int *semicolon_args_len = (int*)malloc(sizeof(int));
 	int *back_argCommand_len = (int*)malloc(sizeof(int));
-	int bg = 0;
+	int bg = 0 , j;
 
 	while (out)
 	{
@@ -55,30 +59,35 @@ void shell_loop(void)
 		wd = strstr(cwd, username) + strlen(username);
 		printf("<%s@%s:~%s > ", username, hostname, wd);
 		in_line = getCommand();
-		backArgs = splitBackCommand(in_line, back_args_len);
-		if(*back_args_len == 1)
+		commands = semicolonSeperator(in_line,semicolon_args_len);
+		for(j=0;j< *(semicolon_args_len); j++)
 		{
-			in_line = idCommand(in_line);
-			args = splitCommand(in_line, args_len);		
-			out = executeCommand(args, bg);
-		}
-		else
-		{
-			int i;
-			for (i = 0; i < *(back_args_len) - 1; ++i)
+			backArgs = splitBackCommand(commands[j], back_args_len);
+			if(*back_args_len == 1)
 			{
-				bg = 1;
+				in_line = idCommand(commands[j]);
+				args = splitCommand(in_line, args_len);		
+				out = executeCommand(args, bg);
+			}
+			else
+			{
+				int i;
+				for (i = 0; i < *(back_args_len) - 1; ++i)
+				{
+					bg = 1;
+					in_line = idCommand(backArgs[i]);
+					args = splitCommand(backArgs[i], back_argCommand_len);		
+					out = executeCommand(args, bg);
+				}	
+				bg = 0;
 				in_line = idCommand(backArgs[i]);
 				args = splitCommand(backArgs[i], back_argCommand_len);		
 				out = executeCommand(args, bg);
-			}	
-			bg = 0;
-			in_line = idCommand(backArgs[i]);
-			args = splitCommand(backArgs[i], back_argCommand_len);		
-			out = executeCommand(args, bg);
+			}
 		}
 	}
 	free(args);
+	free(commands);
 	free(backArgs);
 	free(in_line);	
 }
@@ -133,6 +142,30 @@ char **splitBackCommand(char *line, int* back_args_len)
 	*back_args_len = position;
 	return args;
 }
+
+char **semicolonSeperator(char *line, int* semicolon_args_len)
+{
+	unsigned long bufsize = TOKEN_BUFSIZE;
+	int position = 0;
+	char **args = malloc(sizeof(char*) * bufsize);
+	char *arg;
+	if (!args)
+	{
+		fprintf(stderr, "shell: Allocation Error\n");
+		exit(1);
+	}
+
+	arg = strtok(line, SEMICOLON_DELIMITERS);
+	while (arg != NULL)
+	{
+		args[position++] = arg;
+		// printf("%s\n", arg);		
+		arg = strtok(NULL, SEMICOLON_DELIMITERS);
+	}
+	args[position] = NULL;
+	*semicolon_args_len = position;
+	return args;
+}	
 
 char **splitCommand(char *line, int* args_len)
 {
