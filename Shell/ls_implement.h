@@ -11,6 +11,7 @@
 #include <grp.h>
 #include <uuid/uuid.h>
 #include <time.h>
+#include <stdlib.h>
 
 int run_ls(char **);
 int printFileDir(char *, int []);

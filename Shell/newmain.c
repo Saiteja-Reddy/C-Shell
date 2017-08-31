@@ -12,6 +12,9 @@ int run_echo(char **);
 int run_cd(char **);
 int run_pwd(char **);
 int run_exit(char **);
+void checkEcho(char *);
+char* addToPrintBuf(char *, char , int *);
+char* echoOutLine(int *, char *);
 
 char hostname[256];
 char username[256];
@@ -62,85 +65,159 @@ char* readCommand(void)
 	{
 		if(strcmp(charg, "echo") == 0)
 		{
-			int flag1 = 0; // '
-			int flag2 = 0; // "
-			int act = 0;
-			char *iter = buffer;
-			iter = iter + 5;
-			char now = *(iter);
-			int state = 0;
-			while(now != '\0')
-			{
-				switch(state)
-				{
-					case 0:
-						switch(now)
-						{
-							case 34:
-								state = 2;
-								break;
-							case 39:
-								state = 3;
-								break;
-							case 32:
-								break;
-							default:
-							printf("%c", now);
-								state = 1;
-								break;
-						}
-						break;
-					case 1:
-						switch(now)
-						{
-							case 34:
-								state = 2;
-								break;
-							case 39:
-								state = 3;
-								break;
-							case 32:
-							printf("%c", now);
-								state = 0;
-								break;
-							default:
-								printf("%c",now);
-								break;
-						}
-						break;
-					case 2:
-						switch(now)
-						{
-							case 34:
-								state = 1;
-								break;
-							default:
-							printf("%c", now);
-								break;
-						}
-						break;
-
-					case 3:
-						switch(now)
-						{
-							case 39:
-								state = 1;
-								break;
-							default:
-							printf("%c", now);
-								break;
-						}
-						break;
-				}
-				iter = iter + 1;
-				now = *(iter);
-			}
-
-
+			checkEcho(buffer);
+			return cpBuffer;
 		}
 	}
 	free(cpBuffer);
 	return buffer;
+}
+
+void checkEcho(char *buffer)
+{
+	unsigned long bufsize = 0;
+	char *iter = buffer;
+	iter = iter + 5;
+	int pbufsize = 10;
+	int *statePtr = malloc(sizeof(int));
+	*statePtr = 0;
+	char *printBuffer;
+	printBuffer = echoOutLine(statePtr, iter);
+	// printf("%s", printBuffer);
+
+	char **allOut = (char**)malloc(sizeof(char*)*10);
+	int all_bufsize = 2;
+	int position = 0;
+	allOut[position++] = printBuffer;
+
+	// printf("%d\n", state);
+	while(*statePtr == 2 || *statePtr == 3)
+	{
+		printf(">");
+		getline(&buffer, &bufsize, stdin);
+		printBuffer = echoOutLine(statePtr, buffer);	
+
+		allOut[position++] = printBuffer;		
+		if(position >= all_bufsize)
+		{
+			all_bufsize += all_bufsize;
+      		allOut = realloc(allOut, all_bufsize);
+			if (!allOut) {
+			    fprintf(stderr, "Shell: allOut reallocation error\n");
+			    exit(EXIT_FAILURE);
+			  }      		
+		}
+	}	
+	int i;
+	for (i = 0; i < position; ++i)
+	{
+		printf("%s", allOut[i]);
+		// free(allOut[i]);
+	}
+}
+
+char* echoOutLine(int *statePtr, char *iter)
+{
+	char *printBuffer = (char*)malloc(sizeof(char)*100);
+	int *position = malloc(sizeof(int));
+	int state = *statePtr;
+
+	char now = *(iter);
+	while(now != '\0')
+	{
+		switch(state)
+		{
+			case 0:
+				switch(now)
+				{
+					case 34:
+						state = 2;
+						break;
+					case 39:
+						state = 3;
+						break;
+					case 32:
+						break;
+					default:
+					printBuffer = addToPrintBuf(printBuffer, now, position);
+					// printf("%c", now);
+						state = 1;
+						break;
+				}
+				break;
+			case 1:
+				switch(now)
+				{
+					case 34:
+						state = 2;
+						break;
+					case 39:
+						state = 3;
+						break;
+					case 32:
+					printBuffer = addToPrintBuf(printBuffer, now, position);
+					// printf("%c", now);
+						state = 0;
+						break;
+					default:
+					printBuffer = addToPrintBuf(printBuffer, now, position);
+						// printf("%c",now);
+						break;
+				}
+				break;
+			case 2:
+				switch(now)
+				{
+					case 34:
+						state = 1;
+						break;
+					default:
+					printBuffer = addToPrintBuf(printBuffer, now, position);
+					// printf("%c", now);
+						break;
+				}
+				break;
+
+			case 3:
+				switch(now)
+				{
+					case 39:
+						state = 1;
+						break;
+					default:
+					printBuffer = addToPrintBuf(printBuffer, now, position);
+					// printf("%c", now);
+						break;
+				}
+				break;
+		}
+		iter = iter + 1;
+		now = *(iter);
+	}
+	// return state;
+	*(statePtr) = state;
+	printBuffer[*(position)] = '\0';
+	return printBuffer;
+}
+
+char* addToPrintBuf(char *printBuffer, char now, int *position)
+{
+	int pbufsize = 100;
+	char c = now;
+    printBuffer[*(position)] = c;
+	*(position) = *(position) + 1;
+	// printf("ajkdnaksndkansdkjnk\n");
+    // If we have exceeded the buffer, reallocate.
+    if (*(position) >= pbufsize) {
+      pbufsize += pbufsize;
+      printBuffer = realloc(printBuffer, pbufsize);
+      if (!printBuffer) {
+        fprintf(stderr, "Shell: printBuffer reallocation error\n");
+        exit(EXIT_FAILURE);
+      }
+    }	
+
+    return printBuffer;
 }
 
 char **splitCommand(char *line)
@@ -209,7 +286,7 @@ int executeCommand(char **args)
 
 int run_echo(char **args)
 {
-	printf("IN ECHO : %s\n", args[0]);
+	// printf("IN ECHO : %s\n", args[0]);
 	return 1;
 }
 
