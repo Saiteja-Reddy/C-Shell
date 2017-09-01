@@ -1,0 +1,11 @@
+initsct()
+newwin
+keypad
+nodelay
+curseset
+border
+clear
+addstr
+win.refresh
+getch
+timeout

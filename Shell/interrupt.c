@@ -8,9 +8,16 @@
 #include <signal.h>
 #include <curses.h>
 
+
 int main(int argc, char const *argv[])
 {
+	keypad(stdscr, TRUE);
 	pid_t pid = fork();
+	WINDOW* curr = initscr();
+	keypad(stdscr, TRUE);
+	curs_set(0);
+	nodelay(curr,1);
+
 	if(pid == 0)
 	{
 		FILE* fd = fopen("/proc/interrupts", "r");
@@ -37,7 +44,7 @@ int main(int argc, char const *argv[])
 		while(1)
 		{
 			c = getch();
-			printf("salkdmalksmdklamsdklmalkd - %c\n", c );
+
 			if(c == 'q')
 			{
 				kill(pid, SIGKILL);
