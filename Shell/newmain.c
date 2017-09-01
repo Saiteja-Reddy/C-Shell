@@ -20,16 +20,19 @@ char* echoOutLine(int *, char *); // Pre Defs
 char* getCommand(void);
 char* idCommand(char *);
 int run_watch(char **);
+int run_pinfo(char **);
 void nwInterrupt(int );
 void printWatch(char **, int*);
 void nwDirty(int);
+void printPinfo(char **, int* );
+void printProcess(pid_t);
 
 char hostname[256];
 char username[256];
 char cwd[1024];
 char *wd;
-char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit"}; // HELP
-int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch, &run_exit};
+char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo"}; // HELP
+int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch, &run_exit, &run_pinfo};
 int background[1000] = {0};
 char **background_process;
 int bgpointer = 0;
@@ -138,6 +141,19 @@ char* idCommand(char * buffer)
 			printWatch(args, args_len);	
 			free(args);
 			free(args_len);
+			return cpBuffer;
+		}
+		else if(strcmp(charg, "pinfo")==0)
+		{
+		//	printf("Pinfo must be executed\n");
+			int *args_len = (int*)malloc(sizeof(int));
+			char **args;
+			args = splitCommand(buffer, args_len);	
+			printPinfo(args, args_len);		
+
+			free(args);
+			free(args_len);
+		
 			return cpBuffer;
 		}
 	}
@@ -261,7 +277,53 @@ int executeCommand(char **args, int bg)
 	// printf("%s\n", args[0]);
 	return launchProcess(args, bg);
 }
+void printProcess(pid_t pid)
+{
+	char  buffer[500];
+	char  *tempbuffer;
+	char exe_path[1024];
+	unsigned long buf_size = 0;
+	int i;
+	sprintf(buffer,"/proc/%d/status",pid);
+	FILE * fd = fopen(buffer,"r");
+	printf("pid -- %d\n\n",pid);
+	getline(&tempbuffer,&buf_size,fd);
+	getline(&tempbuffer,&buf_size,fd);
+	getline(&tempbuffer,&buf_size,fd);
+	printf("%s",tempbuffer);
+	for(i=0;i<15;i++)
+		getline(&tempbuffer,&buf_size,fd);
+	printf("%s",tempbuffer);
+	fclose(fd);
+	sprintf(buffer,"/proc/%d/exe",pid);
+	int ret  = readlink(buffer,exe_path,1000);	
+	if(ret == -1)
+		printf("Executable path -- Not defined in proc\n\n");
+	else
+	{
+		exe_path[ret] = '\0';
+		printf("Executable path -- %s\n\n",exe_path);
+	}
+}
 
+
+void printPinfo(char **args, int* args_len)
+{
+		int pid;
+		if(*args_len == 1)
+		{
+			//printf("Parent info\n");
+			printProcess(getpid());
+
+		}
+		else
+		{
+		 	pid= atoi(args[1]);
+		 	printProcess(pid);
+		 	//printf("%d ProcessInfo\n",pid);
+		}
+
+}
 
 void printWatch(char **args, int* args_len)
 {
@@ -438,6 +500,13 @@ void nwDirty(int time_int)
 	endwin();
 
 }
+
+int run_pinfo(char **args)
+{
+	// printf("IN Watch : %s\n", args[0]);
+	return 1;
+}
+
 int run_watch(char **args)
 {
 	// printf("IN Watch : %s\n", args[0]);
