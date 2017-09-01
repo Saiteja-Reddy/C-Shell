@@ -17,7 +17,7 @@ char hostname[256];
 char username[256];
 char cwd[1024];
 char *wd;
-char *builtin[] = {"echo", "cd", "ls", "pwd", "exit"}; // HELP
+char *builtin[] = {"echo", "cd", "ls", "pwd" ,"exit"}; // HELP
 int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_exit};
 
 int main(int argc, char const *argv[])

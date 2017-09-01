@@ -18,13 +18,15 @@ char* addToPrintBuf(char *, char , int *);
 char* echoOutLine(int *, char *); // Pre Defs
 char* getCommand(void);
 char* idCommand(char *);
+int run_watch(char **);
+void printWatch(char **, int*);
 
 char hostname[256];
 char username[256];
 char cwd[1024];
 char *wd;
-char *builtin[] = {"echo", "cd", "ls", "pwd", "exit"}; // HELP
-int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_exit};
+char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit"}; // HELP
+int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch, &run_exit};
 int background[1000] = {0};
 char **background_process;
 int bgpointer = 0;
@@ -122,6 +124,17 @@ char* idCommand(char * buffer)
 		if(strcmp(charg, "echo") == 0)
 		{
 			checkEcho(buffer);
+			return cpBuffer;
+		}
+		else if(strcmp(charg, "nightswatch") == 0)
+		{
+			// printf("Watch Command to be executed Here\n");
+			int *args_len = (int*)malloc(sizeof(int));
+			char **args;
+			args = splitCommand(buffer, args_len);	
+			printWatch(args, args_len);	
+			free(args);
+			free(args_len);
 			return cpBuffer;
 		}
 	}
@@ -244,6 +257,80 @@ int executeCommand(char **args, int bg)
 
 	// printf("%s\n", args[0]);
 	return launchProcess(args, bg);
+}
+
+
+void printWatch(char **args, int* args_len)
+{
+	// printf("IN Print Watch : %s\n", args[0]);
+	int opt;
+	int index = 0;
+	if(*args_len == 1)
+	{
+		printf("nightswatch: Use nightswatch [options] <valid command>\nHere valid commands are 'interrupt' and 'dirty'\n");
+		optind = 1;
+		return;
+	}
+
+	while( (opt =  getopt(*args_len, args, "n")) != -1 )
+	{
+		if(opt == 63)
+		{
+			optind = 1;
+			return;
+		}
+		if(opt == 'n')
+			index = optind;
+	}
+	int i; char c;
+	int time_int = 2;
+	
+	if(index != 0)
+	{
+		for (i = 0; i < strlen(args[index]); ++i)
+		{
+			c = args[index][i];
+			if(!(c >= 48 && c <= 57))
+			{
+				printf("nightswatch: failed to parse argument: '%s'\n", args[index] );
+				optind = 1;
+				return;
+			}
+		}
+		time_int =  atoi(args[index]);
+	}
+	printf("%d\n", time_int );
+	if(index + 1 == *args_len)
+	{
+		printf("nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n");
+		optind = 1;
+		return;
+	}
+
+	if(strcmp(args[index + 1], "interrupt") == 0)
+	{
+		/// Interrupt Code here
+		printf("Interrupt Put\n");
+	}
+	else if(strcmp(args[index + 1], "dirty") == 0)
+	{
+		/// Dirty Code here
+		printf("Dirty Here\n");
+	}
+	else
+	{
+		printf("nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n");
+		optind = 1;
+		return;
+	}
+
+	optind = 1;
+}
+
+int run_watch(char **args)
+{
+	// printf("IN Watch : %s\n", args[0]);
+	return 1;
 }
 
 int run_cd(char **args)

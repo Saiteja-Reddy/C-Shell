@@ -166,12 +166,12 @@ void PrintFileInfo(struct stat fileStat)
 	printf((fileStat.st_mode & S_IWOTH)?"w":"-");
 	printf((fileStat.st_mode & S_IXOTH)?"x":"-");
 	printf(" ");
-	printf("%d ",fileStat.st_nlink);
+	printf("%lu ",fileStat.st_nlink);
 	struct passwd *owner = getpwuid(fileStat.st_uid);
 	struct group *group_own = getgrgid(fileStat.st_gid);
 	printf("%s ", 	owner->pw_name);
 	printf("%s ", 	group_own->gr_name);
-	printf("%lld ", 	fileStat.st_size);
+	printf("%lu ", 	fileStat.st_size);
 	struct tm* lastM_time;
 	lastM_time = localtime(&fileStat.st_mtime);
 	printf("%s ", 	getMonth(lastM_time->tm_mon));

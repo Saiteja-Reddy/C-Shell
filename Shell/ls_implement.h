@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <pwd.h>
 #include <string.h>
 #include <errno.h>
@@ -12,6 +13,8 @@
 #include <uuid/uuid.h>
 #include <time.h>
 #include <stdlib.h>
+#include <getopt.h>
+
 
 int run_ls(char **);
 int printFileDir(char *, int []);
