@@ -45,7 +45,7 @@ int main(int argc, char const *argv[])
 			k += 1;
 			fseek(fd, 0, SEEK_SET);			
 			getline(&buffer, &bufsize, fd);
-			getline(&buffer, &bufsize, fd);
+				getline(&buffer, &bufsize, fd);
 			getline(&buffer, &bufsize, fd);			
 			mvwaddstr(win, k, 10, buffer);
 			fclose(fd);

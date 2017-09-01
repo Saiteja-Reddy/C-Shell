@@ -1,4 +1,5 @@
 #include "ls_implement.h"
+#include <curses.h>
 
 #define TOKEN_BUFSIZE 64
 #define DELIMITERS " \t\r\n\a"
@@ -19,6 +20,7 @@ char* echoOutLine(int *, char *); // Pre Defs
 char* getCommand(void);
 char* idCommand(char *);
 int run_watch(char **);
+void nwInterrupt(int );
 void printWatch(char **, int*);
 
 char hostname[256];
@@ -299,7 +301,6 @@ void printWatch(char **args, int* args_len)
 		}
 		time_int =  atoi(args[index]);
 	}
-	printf("%d\n", time_int );
 	if(index + 1 == *args_len)
 	{
 		printf("nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n");
@@ -310,7 +311,7 @@ void printWatch(char **args, int* args_len)
 	if(strcmp(args[index + 1], "interrupt") == 0)
 	{
 		/// Interrupt Code here
-		printf("Interrupt Put\n");
+		nwInterrupt(time_int);
 	}
 	else if(strcmp(args[index + 1], "dirty") == 0)
 	{
@@ -326,7 +327,63 @@ void printWatch(char **args, int* args_len)
 
 	optind = 1;
 }
+void nwInterrupt(int time_int)
+{
+	char c;
+	WINDOW* curr = initscr();
+	keypad(stdscr, TRUE);
+	WINDOW * win; 
+	win = newwin(800,600,1,1);
+	noecho();
+	curs_set(0);
+	nodelay(win,1);
+	int j = 10;
+	int k = 0;
+	int start = time(NULL) , current,prevcurrent = time(NULL);
+	k=5;
+	unsigned long bufsize = 0;
+	char *buffer;
+	char  *cpuinfo;	
+	char label[200];
+			FILE* fd = fopen("/proc/interrupts", "r");
+			fseek(fd, 0, SEEK_SET);			
+			getline(&cpuinfo, &bufsize, fd);
+			fclose(fd);
+	sprintf(label, "\t%s\tTime specified = %d s","NIGHTSWATCH -- keyboard interrupts",time_int);
+	while(1)
+	{
+		current = time(NULL);
+		if(wgetch(win) == 'q')
+			break;
+		mvwaddstr(win,1,10,label);
+		mvwaddstr(win, 3, 10, cpuinfo);					
+		if((current- start)%time_int == 0 && current!=prevcurrent)
+		{ 
+			fd = fopen("/proc/interrupts", "r");
+			prevcurrent = current;
+			k += 1;
+			fseek(fd, 0, SEEK_SET);			
+			getline(&buffer, &bufsize, fd);
+				getline(&buffer, &bufsize, fd);
+			getline(&buffer, &bufsize, fd);			
+			mvwaddstr(win, k, 10, buffer);
+			fclose(fd);
 
+		}
+		if(k>25)
+		{
+			wclear(win);
+			k=5;
+
+		}
+
+		wrefresh(win);
+	}
+		noecho();
+
+	endwin();
+
+}
 int run_watch(char **args)
 {
 	// printf("IN Watch : %s\n", args[0]);
