@@ -55,6 +55,7 @@ int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_w
 int background[1000] = {0};
 char **background_process;
 int bgpointer = 0;
+char currentDIR[2000];
 
 int main(int argc, char const *argv[])
 {
@@ -63,6 +64,7 @@ int main(int argc, char const *argv[])
 	struct passwd *uinfo = getpwuid(userid);
 	gethostname(hostname, 200);
 	strcpy(username, uinfo->pw_name) ;
+	getwd(currentDIR);
 	shell_loop();
 	return 0;
 }
@@ -90,7 +92,10 @@ void shell_loop(void)
 	{
 		bg = 0;
 		getwd(cwd);
-		wd = strstr(cwd, username) + strlen(username);
+		if(strstr(cwd,currentDIR) != NULL)
+			wd = strstr(cwd, currentDIR) + strlen(currentDIR);
+		else
+			wd = cwd;
 		printf(KCYN "<%s@%s:~%s > " RESET, username, hostname, wd);
 		in_line = getCommand();
 		commands = semicolonSeperator(in_line, semi_args_len);
@@ -596,7 +601,15 @@ int run_cd(char **args)
 		fprintf(stderr, "Please Enter an argument for cd\n");
 		return 1;
 	}
-	if (chdir(args[1]) != 0)
+	char buffer[2000];
+	sprintf(buffer, "%s", args[1]);
+	if(args[1][0] == '~')
+	{
+		sprintf(buffer, "%s/%s",currentDIR,args[1] + 1);
+		// printf("%s\n" ,buffer);
+	}
+	// if (chdir(args[1]) != 0)
+	if (chdir(buffer) != 0)
 	{
 		perror("Shell");
 	}
