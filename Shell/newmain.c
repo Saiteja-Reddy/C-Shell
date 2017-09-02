@@ -5,6 +5,15 @@
 #define DELIMITERS " \t\r\n\a"
 #define BACK_DELIMITERS "&"
 #define SEMICOLON_DELIMITERS ";"
+#define RESET "\x1B[0m"
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
 
 void shell_loop(void);
 int launchProcess(char **, int);
@@ -74,7 +83,7 @@ void shell_loop(void)
 		bg = 0;
 		getwd(cwd);
 		wd = strstr(cwd, username) + strlen(username);
-		printf("<%s@%s:~%s > ", username, hostname, wd);
+		printf(KCYN "<%s@%s:~%s > " RESET, username, hostname, wd);
 		in_line = getCommand();
 		commands = semicolonSeperator(in_line, semi_args_len);
 		
@@ -114,7 +123,7 @@ void shell_loop(void)
 			pid_t return_pid = waitpid(ch_pid, NULL, WNOHANG);
 			if(return_pid == ch_pid)
 				{
-					printf("[-] Done %d %s\n" , ch_pid, background_process[i]);
+					printf(KGRN "[-] Done %d %s\n" RESET, ch_pid, background_process[i]);
 					free(background_process[i]);
 				}
 		}	
@@ -287,7 +296,7 @@ int launchProcess(char **args, int bg)
 		{
 			strcpy(background_process[bgpointer] , args[0]);
 			background[bgpointer++] = pid;
-			printf("[+] %d %s\n" , pid, args[0]);
+			printf(KMAG "[+] %d %s\n" RESET, pid, args[0]);
 		}
 	}
 	else
