@@ -1,5 +1,6 @@
 #include "ls_implement.h"
 #include <curses.h>
+#include <ctype.h>
 
 #define TOKEN_BUFSIZE 64
 #define DELIMITERS " \t\r\n\a"
@@ -14,6 +15,13 @@
 #define KMAG  "\x1B[35m"
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
+#define RED   "\x1B[31m"
+#define GRN   "\x1B[32m"
+#define YEL   "\x1B[33m"
+#define BLU   "\x1B[34m"
+#define MAG   "\x1B[35m"
+#define CYN   "\x1B[36m"
+#define WHT   "\x1B[37m"
 
 void shell_loop(void);
 int launchProcess(char **, int);
@@ -334,6 +342,11 @@ void printProcess(pid_t pid)
 	int i;
 	sprintf(buffer,"/proc/%d/status",pid);
 	FILE * fd = fopen(buffer,"r");
+	if(fd == NULL)
+	{
+		printf(RED "There is no process with pid - %d\n" RESET, pid );
+		return;
+	}
 	printf("pid -- %d\n\n",pid);
 	getline(&tempbuffer,&buf_size,fd);
 	getline(&tempbuffer,&buf_size,fd);
@@ -364,8 +377,22 @@ void printPinfo(char **args, int* args_len)
 			printProcess(getpid());
 
 		}
+		else if(*args_len >= 3)
+		{
+			printf(RED "pinfo: Too many arguments\nUsage: pinfo <pid>\n" RESET);
+			return;
+		}
 		else
 		{
+			int i;
+			for (i = 0; i < strlen(args[1]); ++i)
+			{
+				if(!(args[1][i] >= '0' && args[1][i] <= '9'))
+				{
+					printf(RED "pinfo: Please Enter a number for PID\n" RESET);
+					return;
+				}
+			}
 		 	pid= atoi(args[1]);
 		 	printProcess(pid);
 		 	//printf("%d ProcessInfo\n",pid);
@@ -380,7 +407,7 @@ void printWatch(char **args, int* args_len)
 	int index = 0;
 	if(*args_len == 1)
 	{
-		printf("nightswatch: Use nightswatch [options] <valid command>\nHere valid commands are 'interrupt' and 'dirty'\n");
+		printf(RED "nightswatch: Use nightswatch [options] <valid command>\nHere valid commands are 'interrupt' and 'dirty'\n" RESET);
 		optind = 1;
 		return;
 	}
@@ -405,7 +432,7 @@ void printWatch(char **args, int* args_len)
 			c = args[index][i];
 			if(!(c >= 48 && c <= 57))
 			{
-				printf("nightswatch: failed to parse argument: '%s'\n", args[index] );
+				printf(RED "nightswatch: failed to parse argument: '%s'\n" RESET, args[index] );
 				optind = 1;
 				return;
 			}
@@ -414,7 +441,7 @@ void printWatch(char **args, int* args_len)
 	}
 	if(index + 1 == *args_len)
 	{
-		printf("nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n");
+		printf(RED "nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n" RESET);
 		optind = 1;
 		return;
 	}
@@ -432,7 +459,7 @@ void printWatch(char **args, int* args_len)
 	}
 	else
 	{
-		printf("nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n");
+		printf(RED "nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n" RESET);
 		optind = 1;
 		return;
 	}
