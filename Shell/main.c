@@ -40,14 +40,14 @@ char* idCommand(char *);
 
 char hostname[256];
 char username[256];
-char cwd[1024];
+char cwd[2017];
 char *wd;
 char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo"}; // HELP
 int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch, &run_exit, &run_pinfo};
 int background[1000] = {0};
 char **background_process;
 int bgpointer = 0;
-char currentDIR[2000];
+char currentDIR[2017];
 
 int main(int argc, char const *argv[])
 {
@@ -56,7 +56,8 @@ int main(int argc, char const *argv[])
 	struct passwd *uinfo = getpwuid(userid);
 	gethostname(hostname, 200);
 	strcpy(username, uinfo->pw_name) ;
-	getwd(currentDIR);
+	// getwd(currentDIR);
+	getcwd(currentDIR, 2000);
 	shell_loop();
 	return 0;
 }
@@ -83,7 +84,8 @@ void shell_loop(void)
 	while (out)
 	{
 		bg = 0;
-		getwd(cwd);
+		// getwd(cwd);
+		getcwd(cwd, 2000);
 		if(strstr(cwd,currentDIR) != NULL)
 			wd = strstr(cwd, currentDIR) + strlen(currentDIR);
 		else

@@ -2,7 +2,6 @@ LDFLAGS=-lncurses
 
 a.out: main.o ls.o echo.o pinfo.o nightswatch.o
 	gcc main.o ls.o echo.o pinfo.o nightswatch.o -o a.out -lncurses
-	rm -rf main.o ls.o echo.o pinfo.o nightswatch.o
 
 main.o: main.c
 	gcc -c main.c
@@ -20,4 +19,4 @@ nightswatch.o: nightswatch_implement.h nightswatch_implement.c
 	gcc -c nightswatch_implement.c -o nightswatch.o
 
 clean:
-	rm -rf a.out
+	rm -rf main.o ls.o echo.o pinfo.o nightswatch.o a.out
