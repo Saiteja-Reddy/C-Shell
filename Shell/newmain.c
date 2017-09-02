@@ -86,7 +86,7 @@ void shell_loop(void)
 				if(*back_args_len == 1)
 				{
 					in_line = idCommand(commands[j]);
-					in_line = idCommand(in_line);
+					// in_line = idCommand(in_line);
 					args = splitCommand(in_line, args_len);		
 					out = executeCommand(args, bg);
 				}
@@ -418,7 +418,7 @@ void printWatch(char **args, int* args_len)
 	else if(strcmp(args[index + 1], "dirty") == 0)
 	{
 		/// Dirty Code here
-		printf("Dirty Here\n");
+		// printf("Dirty Here\n");
 		nwDirty(time_int);
 	}
 	else
@@ -554,7 +554,7 @@ int run_watch(char **args)
 
 int run_cd(char **args)
 {
-	printf("IN CD : %s\n", args[0]);
+	// printf("IN CD : %s\n", args[0]);
 	if (args[1] == NULL)
 	{
 		fprintf(stderr, "Please Enter an argument for cd\n");
@@ -569,14 +569,14 @@ int run_cd(char **args)
 
 int run_pwd(char **args)
 {
-	printf("IN PWD : %s\n", args[0]);
+	// printf("IN PWD : %s\n", args[0]);
 	printf("%s\n", cwd);
 	return 1;
 }
 
 int run_exit(char **args)
 {
-	printf("IN EXIT : %s\n", args[0]);
+	// printf("IN EXIT : %s\n", args[0]);
 	// exit(1);
 	return 0;
 }
