@@ -1,1 +1,1 @@
-gcc  main.c ls_implement.c -o out -> To run, Shell.
+gcc main.c ls_implement.c echo_implement.c nightswatch_implement.c pinfo_implement.c -o a.out -lncurses
