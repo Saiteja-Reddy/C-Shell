@@ -4,11 +4,13 @@
 #define TOKEN_BUFSIZE 64
 #define DELIMITERS " \t\r\n\a"
 #define BACK_DELIMITERS "&"
+#define SEMICOLON_DELIMITERS ";"
 
 void shell_loop(void);
 int launchProcess(char **, int);
 char **splitCommand(char *, int*);
 char **splitBackCommand(char *, int*);
+char **semicolonSeperator(char *, int* );
 int executeCommand(char **, int);
 int run_echo(char **);
 int run_cd(char **);
@@ -50,13 +52,15 @@ int main(int argc, char const *argv[])
 
 void shell_loop(void)
 {
-	int i;
+	int i,j;
 	char *in_line;
 	char **args;
 	int out = 1;
 	int *args_len = (int*)malloc(sizeof(int));
 	char **backArgs;
+	char **commands;
 	int *back_args_len = (int*)malloc(sizeof(int));
+	int *semi_args_len = (int*)malloc(sizeof(int));
 	int *back_argCommand_len = (int*)malloc(sizeof(int));
 	int bg = 0;
 	background_process = malloc(sizeof(char*)*1000);
@@ -72,30 +76,40 @@ void shell_loop(void)
 		wd = strstr(cwd, username) + strlen(username);
 		printf("<%s@%s:~%s > ", username, hostname, wd);
 		in_line = getCommand();
-		backArgs = splitBackCommand(in_line, back_args_len);
-		if(*back_args_len == 1)
+		commands = semicolonSeperator(in_line, semi_args_len);
+		
+		for (j = 0; j < *(semi_args_len); ++j)
 		{
-			in_line = idCommand(in_line);
-			args = splitCommand(in_line, args_len);		
-			out = executeCommand(args, bg);
-		}
-		else
-		{
-			for (i = 0; i < *(back_args_len) - 1; ++i)
-			{
-				bg = 1;
-				in_line = idCommand(backArgs[i]);
-				args = splitCommand(backArgs[i], back_argCommand_len);		
-				out = executeCommand(args, bg);
-			}	
-			bg = 0;
-			in_line = idCommand(backArgs[i]);
-			args = splitCommand(backArgs[i], back_argCommand_len);		
-			out = executeCommand(args, bg);
-		}
+
+				backArgs = splitBackCommand(commands[j], back_args_len);
+				// backArgs = splitBackCommand(in_line, back_args_len);
+				if(*back_args_len == 1)
+				{
+					in_line = idCommand(commands[j]);
+					in_line = idCommand(in_line);
+					args = splitCommand(in_line, args_len);		
+					out = executeCommand(args, bg);
+				}
+				else
+				{
+					for (i = 0; i < *(back_args_len) - 1; ++i)
+					{
+						bg = 1;
+						in_line = idCommand(backArgs[i]);
+						args = splitCommand(backArgs[i], back_argCommand_len);		
+						out = executeCommand(args, bg);
+					}	
+					bg = 0;
+					in_line = idCommand(backArgs[i]);
+					args = splitCommand(backArgs[i], back_argCommand_len);		
+					out = executeCommand(args, bg);
+				}
+		
+		}	
 
 		for (i = 0; i < bgpointer; ++i)
 		{
+			// printf("Here at BG\n");
 			pid_t ch_pid = background[i];
 			pid_t return_pid = waitpid(ch_pid, NULL, WNOHANG);
 			if(return_pid == ch_pid)
@@ -103,8 +117,9 @@ void shell_loop(void)
 					printf("[-] Done %d %s\n" , ch_pid, background_process[i]);
 					free(background_process[i]);
 				}
-		}		
+		}	
 	}
+	free(commands);
 	free(args);
 	free(backArgs);
 	free(in_line);	
@@ -160,6 +175,30 @@ char* idCommand(char * buffer)
 	free(cpBuffer);
 	return buffer;
 }
+
+char **semicolonSeperator(char *line, int* semicolon_args_len)
+{
+	unsigned long bufsize = TOKEN_BUFSIZE;
+	int position = 0;
+	char **args = malloc(sizeof(char*) * bufsize);
+	char *arg;
+	if (!args)
+	{
+		fprintf(stderr, "shell: Allocation Error\n");
+		exit(1);
+	}
+
+	arg = strtok(line, SEMICOLON_DELIMITERS);
+	while (arg != NULL)
+	{
+		args[position++] = arg;
+		// printf("%s\n", arg);		
+		arg = strtok(NULL, SEMICOLON_DELIMITERS);
+	}
+	args[position] = NULL;
+	*semicolon_args_len = position;
+	return args;
+} 
 
 char **splitBackCommand(char *line, int* back_args_len)
 {
