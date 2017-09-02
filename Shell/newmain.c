@@ -555,7 +555,7 @@ void checkEcho(char *buffer)
 	printBuffer = echoOutLine(statePtr, iter);
 	// printf("%s", printBuffer);
 
-	char **allOut = (char**)malloc(sizeof(char*)*10);
+	char **allOut = (char**)malloc(sizeof(char*)*2);
 	int all_bufsize = 2;
 	int position = 0;
 	allOut[position++] = printBuffer;
@@ -570,8 +570,9 @@ void checkEcho(char *buffer)
 		allOut[position++] = printBuffer;		
 		if(position >= all_bufsize)
 		{
-			all_bufsize += all_bufsize;
-      		allOut = realloc(allOut, all_bufsize);
+			all_bufsize = position + all_bufsize;
+			// printf("%d - Updated All buf\n", all_bufsize );
+      		allOut = (char **)realloc(allOut, all_bufsize * sizeof(char*));
 			if (!allOut) {
 			    fprintf(stderr, "Shell: allOut reallocation error\n");
 			    exit(EXIT_FAILURE);
@@ -582,16 +583,16 @@ void checkEcho(char *buffer)
 	for (i = 0; i < position; ++i)
 	{
 		printf("%s", allOut[i]);
-		// free(allout[])
+		free(allOut[i]);
 	}
 }
 
 char* echoOutLine(int *statePtr, char *iter)
 {
-	char *printBuffer = (char*)malloc(sizeof(char)*100);
-	int *position = malloc(sizeof(int));
+	char *printBuffer = (char*)malloc(sizeof(char)*1000);
+	int *position = (int *)malloc(sizeof(int));
 	int state = *statePtr;
-
+	*position = 0;
 	char now = *(iter);
 	while(now != '\0')
 	{
@@ -663,6 +664,7 @@ char* echoOutLine(int *statePtr, char *iter)
 		}
 		iter = iter + 1;
 		now = *(iter);
+		// printf("%d\n", strlen(printBuffer) );
 	}
 	// return state;
 	*(statePtr) = state;
@@ -676,17 +678,15 @@ char* addToPrintBuf(char *printBuffer, char now, int *position)
 	char c = now;
     printBuffer[*(position)] = c;
 	*(position) = *(position) + 1;
-	// printf("ajkdnaksndkansdkjnk\n");
     // If we have exceeded the buffer, reallocate.
     if (*(position) >= pbufsize) {
-      pbufsize += pbufsize;
-      printBuffer = realloc(printBuffer, pbufsize);
+      pbufsize = *(position) + pbufsize;
+      printBuffer = (char*)realloc(printBuffer, pbufsize*sizeof(char));
       if (!printBuffer) {
         fprintf(stderr, "Shell: printBuffer reallocation error\n");
         exit(EXIT_FAILURE);
       }
     }	
-
     return printBuffer;
 }
 

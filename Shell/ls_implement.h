@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <grp.h>
-#include <uuid/uuid.h>
+// #include <uuid/uuid.h>
 #include <time.h>
 #include <stdlib.h>
 #include <getopt.h>
