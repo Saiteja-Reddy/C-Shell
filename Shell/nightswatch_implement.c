@@ -52,16 +52,13 @@ void printWatch(char **args, int* args_len)
 		return;
 	}
 
-	if(strcmp(args[index + 1], "interrupt") == 0)
+	if(strcmp(args[index + 1], "dirty") == 0)
 	{
-		/// Interrupt Code here
-		nwInterrupt(time_int);
-	}
-	else if(strcmp(args[index + 1], "dirty") == 0)
-	{
-		/// Dirty Code here
-		// printf("Dirty Here\n");
 		nwDirty(time_int);
+	}
+	else if(strcmp(args[index + 1], "interrupt") == 0)
+	{
+		nwInterrupt(time_int);
 	}
 	else
 	{
@@ -76,43 +73,52 @@ void nwInterrupt(int time_int)
 {
 	char c;
 	WINDOW* curr = initscr();
-	keypad(stdscr, TRUE);
 	WINDOW * win; 
 	win = newwin(800,600,1,1);
+	keypad(win, TRUE);
 	noecho();
 	curs_set(0);
 	nodelay(win,1);
 	int j = 10;
 	int k = 0;
+	int i;
 	int start = time(NULL) , current,prevcurrent = time(NULL);
-	k=5;
+	k=7;
 	unsigned long bufsize = 0;
 	char *buffer;
-	char  *cpuinfo;	
 	char label[200];
-			FILE* fd = fopen("/proc/interrupts", "r");
-			fseek(fd, 0, SEEK_SET);			
-			getline(&cpuinfo, &bufsize, fd);
-			fclose(fd);
-	sprintf(label, "\t%s\tTime specified = %d s","NIGHTSWATCH -- keyboard interrupts",time_int);
+	FILE * fd;
+	FILE * fd1;
+	sprintf(label, "\t%s\tTime specified = %d s","NIGHTSWATCH -- Interrupt",time_int);
+
+	char *cpuinfo;
+	fd = fopen("/proc/interrupts","r");
+	getline(&cpuinfo,&bufsize,fd);
+	fclose(fd);
+
 	while(1)
 	{
 		current = time(NULL);
 		if(wgetch(win) == 'q')
+		{
+			wclear(win);
 			break;
+		}
 		mvwaddstr(win,1,10,label);
-		mvwaddstr(win, 3, 10, cpuinfo);					
+		mvwaddstr(win,3,10,cpuinfo);
 		if((current- start)%time_int == 0 && current!=prevcurrent)
 		{ 
-			fd = fopen("/proc/interrupts", "r");
+			char *nowbuffer;
+			fd1 = fopen("/proc/interrupts", "r");
 			prevcurrent = current;
 			k += 1;
-			fseek(fd, 0, SEEK_SET);			
-			getline(&buffer, &bufsize, fd);
-				getline(&buffer, &bufsize, fd);
-			getline(&buffer, &bufsize, fd);			
-			mvwaddstr(win, k, 10, buffer);
-			fclose(fd);
+			unsigned long nowbufsize = 0;
+			fseek(fd1, 0, SEEK_SET);	
+			getline(&nowbuffer, &nowbufsize, fd1);			
+			getline(&nowbuffer, &nowbufsize, fd1);			
+			getline(&nowbuffer, &nowbufsize, fd1);			
+			mvwaddstr(win, k, 10, nowbuffer);
+			fclose(fd1);
 
 		}
 		if(k>25)
@@ -124,8 +130,10 @@ void nwInterrupt(int time_int)
 
 		wrefresh(win);
 	}
-		noecho();
-
+	noecho();
+	curs_set(1);
+	delwin(win);
+	// delwin(curr);
 	endwin();
 
 }
@@ -133,9 +141,9 @@ void nwDirty(int time_int)
 {
 	char c;
 	WINDOW* curr = initscr();
-	keypad(stdscr, TRUE);
 	WINDOW * win; 
 	win = newwin(800,600,1,1);
+	keypad(win, TRUE);
 	noecho();
 	curs_set(0);
 	nodelay(win,1);
@@ -153,7 +161,10 @@ void nwDirty(int time_int)
 	{
 		current = time(NULL);
 		if(wgetch(win) == 'q')
+		{
+			wclear(win);
 			break;
+		}
 		mvwaddstr(win,1,10,label);
 		if((current- start)%time_int == 0 && current!=prevcurrent)
 		{ 
@@ -176,8 +187,9 @@ void nwDirty(int time_int)
 
 		wrefresh(win);
 	}
-		noecho();
-
+	noecho();
+	curs_set(1);
+	delwin(win);
+	// delwin(curr);
 	endwin();
-
 }
