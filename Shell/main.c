@@ -286,11 +286,57 @@ int launchProcess(char **args, int bg)
 			}
 		}
 
-		if (execvp(args[0], args) == -1)
-		{
-			perror("Shell"); // Print Approporiate Error
-		}
+		// if (execvp(args[0], args) == -1)
+		// {
+		// 	perror("Shell"); // Print Approporiate Error
+		// }
+		int ispiped = 0;
 
+		int pos = 0;
+		int inipos = 0;
+		for (int i = 0; args[i] != NULL; ++i)
+		{
+			if(strcmp(args[i], "|") == 0)
+			{
+				ispiped = 1;
+				int largs = (pos - inipos);
+				char **nowargs = malloc(sizeof(char*) * largs);
+				int j = 0;
+				int k = 0;
+				for (j = inipos; j < inipos+largs; ++j)
+				{
+					printf("%s " , args[j]);
+					nowargs[k++] = args[j];
+				}
+				printf("\n");
+				free(nowargs);
+				inipos = pos + 1;
+			}
+			pos = pos + 1;
+		}
+		int largs = (pos - inipos);
+		char **nowargs = malloc(sizeof(char*) * largs);
+		int j = 0;
+		int k = 0;
+		for (j = inipos; j < inipos+largs; ++j)
+		{
+			printf("%s " , args[j]);
+			nowargs[k++] = args[j];
+		}
+		printf("\n");
+		free(nowargs);
+
+		if(ispiped == 0)
+		{
+			if (execvp(args[0], args) == -1)
+			{
+				perror("Shell"); // Print Approporiate Error
+			}
+		}
+		else
+		{
+			printf("Pipe Shit Here\n");
+		}
 		exit(1);
 	}
 	else if (pid > 0)
