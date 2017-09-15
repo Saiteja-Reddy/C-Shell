@@ -302,12 +302,10 @@ int launchProcess(char **args, int bg)
 				int k = 0;
 				for (j = inipos; j < inipos+largs; ++j)
 				{
-					// printf("%s " , args[j]);
 					nowargs[k++] = args[j];
 				}
-				// printf("\n");
+				nowargs[k++] = 0;
 				args_table[args_pos++] = nowargs;
-				// free(nowargs);
 				inipos = pos + 1;
 			}
 			pos = pos + 1;
@@ -318,11 +316,9 @@ int launchProcess(char **args, int bg)
 		int k = 0;
 		for (j = inipos; j < inipos+largs; ++j)
 		{
-			// printf("%s " , args[j]);
 			nowargs[k++] = args[j];
 		}
-		// printf("\n");
-		// free(nowargs);
+		nowargs[k++] = 0;
 		args_table[args_pos++] = nowargs;
 		if(ispiped == 0)
 		{
@@ -333,13 +329,31 @@ int launchProcess(char **args, int bg)
 		}
 		else
 		{
-			// printf("Pipe Shit Here\n");
-			// for (int i = 0; i < args_pos; ++i)
-			// {
-			// 	printf("%s\n", args_table[i][0] );
-			// }
+			// printf("Pipe Stuff Here\n");
+			int i;
+			for (i = 0; i < args_pos - 1; ++i)
+			{
+				int pipe_p[2];
+				pipe(pipe_p);
 
-			
+				pid_t npid = fork();
+
+				if(npid == 0)
+				{
+					dup2(pipe_p[1],1);
+					if(execvp(args_table[i][0], args_table[i]) == -1)
+					{
+						perror("Shell");
+					}
+					abort();
+				} 
+
+				dup2(pipe_p[0], 0);
+				close(pipe_p[1]);
+			}
+
+			if(execvp(args_table[i][0], args_table[i]) == -1)
+					perror("Shell");
 
 		}
 		for (int i = 0; i < args_pos; ++i)
