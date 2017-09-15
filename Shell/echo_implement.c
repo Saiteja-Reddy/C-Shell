@@ -149,6 +149,17 @@ char* addToPrintBuf(char *printBuffer, char now, int *position)
 
 int run_echo(char **args)
 {
-	// printf("IN ECHO : %s\n", args[0]);
+	// printf("IN ECHOklmdslkmkl\n");
+	// printf("%s\n", args[2] );
+	// int i;
+	// int *count = (int*)malloc(sizeof(int));
+	// *count = 0;
+	// // printf("IN Echo : %s\n", args[0]);
+	// for ( i = 0; args[i] != NULL; ++i)
+	// {
+	// 	*count = *count + 1;
+	// }
+	// printf("%d\n", *count);
+	// printf("Done in Echo\n" );
 	return 1;
 }
