@@ -3,6 +3,15 @@
 int run_watch(char **args)
 {
 	// printf("IN Watch : %s\n", args[0]);
+	int i;
+	int *count = (int*)malloc(sizeof(int));
+	*count = 0;
+	for ( i = 0; args[i] != NULL; ++i)
+	{
+		*count = *count + 1;
+	}
+	// printf("%d are no of args\n", count );
+	printWatch(args, count);	
 	return 1;
 }
 

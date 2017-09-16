@@ -84,7 +84,6 @@ void shell_loop(void)
 	while (out)
 	{
 		bg = 0;
-		// getwd(cwd);
 		getcwd(cwd, 2000);
 		if(strstr(cwd,currentDIR) != NULL)
 			wd = strstr(cwd, currentDIR) + strlen(currentDIR);
@@ -96,13 +95,11 @@ void shell_loop(void)
 		
 		for (j = 0; j < *(semi_args_len); ++j)
 		{
-
+			// printf("%s -- Command\n", commands[j] );
 				backArgs = splitBackCommand(commands[j], back_args_len);
-				// backArgs = splitBackCommand(in_line, back_args_len);
 				if(*back_args_len == 1)
 				{
 					in_line = idCommand(commands[j]);
-					// in_line = idCommand(in_line);
 					args = splitCommand(in_line, args_len);		
 					out = executeCommand(args, bg);
 				}
@@ -156,38 +153,38 @@ char* idCommand(char * buffer)
 
 	char *charg;
 	charg =  strtok(cpBuffer, DELIMITERS);
-	if(charg!= NULL)
-	{
-		if(strcmp(charg, "echo") == 0)
-		{
-			checkEcho(buffer);
-			return cpBuffer;
-		}
-		else if(strcmp(charg, "nightswatch") == 0)
-		{
-			// printf("Watch Command to be executed Here\n");
-			int *args_len = (int*)malloc(sizeof(int));
-			char **args;
-			args = splitCommand(buffer, args_len);	
-			printWatch(args, args_len);	
-			free(args);
-			free(args_len);
-			return cpBuffer;
-		}
-		else if(strcmp(charg, "pinfo")==0)
-		{
-		//	printf("Pinfo must be executed\n");
-			int *args_len = (int*)malloc(sizeof(int));
-			char **args;
-			args = splitCommand(buffer, args_len);	
-			printPinfo(args, args_len);		
+	// if(charg!= NULL)
+	// {
+	// 	if(strcmp(charg, "echo") == 0)
+	// 	{
+	// 		checkEcho(buffer);
+	// 		return cpBuffer;
+	// 	}
+	// 	else if(strcmp(charg, "nightswatch") == 0)
+	// 	{
+	// 		// printf("Watch Command to be executed Here\n");
+	// 		int *args_len = (int*)malloc(sizeof(int));
+	// 		char **args;
+	// 		args = splitCommand(buffer, args_len);	
+	// 		printWatch(args, args_len);	
+	// 		free(args);
+	// 		free(args_len);
+	// 		return cpBuffer;
+	// 	}
+	// 	// else if(strcmp(charg, "pinfo")==0)
+	// 	// {
+	// 	// //	printf("Pinfo must be executed\n");
+	// 	// 	int *args_len = (int*)malloc(sizeof(int));
+	// 	// 	char **args;
+	// 	// 	args = splitCommand(buffer, args_len);	
+	// 	// 	printPinfo(args, args_len);		
 
-			free(args);
-			free(args_len);
+	// 	// 	free(args);
+	// 	// 	free(args_len);
 		
-			return cpBuffer;
-		}
-	}
+	// 	// 	return cpBuffer;
+	// 	// }
+	// }
 	free(cpBuffer);
 	return buffer;
 }

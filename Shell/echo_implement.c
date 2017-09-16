@@ -1,4 +1,5 @@
 #include "echo_implement.h"
+#include <string.h>
 
 void checkEcho(char *buffer)
 {
@@ -149,17 +150,24 @@ char* addToPrintBuf(char *printBuffer, char now, int *position)
 
 int run_echo(char **args)
 {
-	// printf("IN ECHOklmdslkmkl\n");
-	// printf("%s\n", args[2] );
-	// int i;
-	// int *count = (int*)malloc(sizeof(int));
-	// *count = 0;
-	// // printf("IN Echo : %s\n", args[0]);
-	// for ( i = 0; args[i] != NULL; ++i)
-	// {
-	// 	*count = *count + 1;
-	// }
+	int i;
+	int *count = (int*)malloc(sizeof(int));
+	*count = 0;
+	char *buffer = (char*)malloc(sizeof(char) * 1000);
+	strcpy(buffer,"echo");
+	// printf("IN Echo : %s\n", args[0]);
+	for ( i = 1; args[i] != NULL; ++i)
+	{
+		*count = *count + 1;
+		strcat(buffer," ");
+		strcat(buffer,args[i]);
+		// printf("%s\n", args[i]);
+	}
+	strcat(buffer,"\n");
 	// printf("%d\n", *count);
+	// printf("%s\n", buffer);
+	checkEcho(buffer);
+
 	// printf("Done in Echo\n" );
 	return 1;
 }
