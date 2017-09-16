@@ -35,6 +35,15 @@ int executeCommand(char **, int);
 int run_cd(char **);
 int run_pwd(char **);
 int run_exit(char **);
+int run_setenv(char **);
+int run_unsetenv(char **);
+int run_jobs(char **);
+int run_kjob(char **);
+int run_fg(char **);
+int run_bg(char **);
+int run_overkill(char **);
+int run_quit(char **);
+
 char* getCommand(void);
 char* idCommand(char *);
 int runBuiltin(char **);
@@ -43,8 +52,9 @@ char hostname[256];
 char username[256];
 char cwd[2017];
 char *wd;
-char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo"}; // HELP
-int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch, &run_exit, &run_pinfo};
+char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo" , "setenv", "unsetenv", "jobs", "kjob", "fg", "bg", "overkill", "quit"}; // HELP
+int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch,
+ &run_exit, &run_pinfo , &run_setenv, &run_unsetenv, &run_jobs, &run_kjob, &run_fg, &run_bg, &run_overkill, &run_quit};
 int background[1000] = {0};
 char **background_process;
 int bgpointer = 0;
@@ -405,7 +415,7 @@ int executeCommand(char **args, int bg)
 	int boss = runBuiltin(args);
 	if(boss == 1)
 		return 1;
-	
+
 	// printf("%s\n", args[0]);
 	return launchProcess(args, bg);
 }
@@ -447,4 +457,81 @@ int run_exit(char **args)
 	// printf("IN EXIT : %s\n", args[0]);
 	// exit(1);
 	return 0;
+}
+
+/// ----- 
+
+int run_setenv(char **args)
+{
+	// printf("IN setenv");
+	int count = 0, i;
+	for ( i = 0; args[i] != NULL; ++i)
+		count = count + 1;
+	// printf("%d\n", count );
+
+	if(count >=4)
+			printf(RED "setenv: Too many arguments\nUsage: setenv var [value]>\n" RESET);
+	else if(count <= 2)
+			printf(RED "setenv: Too few arguments\nUsage: setenv var [value]>\n" RESET);
+	else
+	{
+		if(setenv(args[1], args[2], 1) == -1)
+		{
+			perror("Shell");
+		}		
+	}
+
+	return 1;
+}
+int run_unsetenv(char **args)
+{
+	// printf("IN unsetenv");
+	int count = 0, i;
+	for ( i = 0; args[i] != NULL; ++i)
+		count = count + 1;
+	// printf("%d\n", count );
+
+	if(count >=3)
+			printf(RED "setenv: Too many arguments\nUsage: setenv var [value]>\n" RESET);
+	else if(count <= 1)
+			printf(RED "setenv: Too few arguments\nUsage: setenv var [value]>\n" RESET);
+	else
+	{
+		if(unsetenv(args[1]) == -1)
+		{
+			perror("Shell");
+		}		
+	}	
+	return 1;
+}
+int run_jobs(char **args)
+{
+	// printf("IN jobs");
+	
+	return 1;
+}
+int run_kjob(char **args)
+{
+	// printf("IN kjob");
+	return 1;
+}
+int run_fg(char **args)
+{
+	// printf("IN fg");
+	return 1;
+}
+int run_bg(char **args)
+{
+	// printf("IN bg");
+	return 1;
+}
+int run_overkill(char **args)
+{
+	// printf("IN overkill");
+	return 1;
+}
+int run_quit(char **args)
+{
+	// printf("IN quit");
+	return 1;
 }
