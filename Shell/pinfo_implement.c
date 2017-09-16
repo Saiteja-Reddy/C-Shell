@@ -34,6 +34,31 @@ void printProcess(pid_t pid)
 	}
 }
 
+void getState(pid_t pid)
+{
+	char  buffer[500];
+	char  *tempbuffer;
+	char exe_path[1024];
+	unsigned long buf_size = 0;
+	int i;
+	sprintf(buffer,"/proc/%d/status",pid);
+	FILE * fd = fopen(buffer,"r");
+	if(fd == NULL)
+	{
+		printf(RED "Stopped\n" RESET );
+		return;
+	}
+	printf("pid -- %d\n\n",pid);
+	getline(&tempbuffer,&buf_size,fd);
+	getline(&tempbuffer,&buf_size,fd);
+	getline(&tempbuffer,&buf_size,fd);
+	printf("%s",tempbuffer);
+	// for(i=0;i<15;i++)
+	// 	getline(&tempbuffer,&buf_size,fd);
+	// printf("%s",tempbuffer);
+	fclose(fd);
+}
+
 
 void printPinfo(char **args, int* args_len)
 {

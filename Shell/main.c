@@ -4,6 +4,7 @@
 #include "pinfo_implement.h"
 
 #include <ctype.h>
+#include <signal.h>
 
 #define TOKEN_BUFSIZE 64
 #define DELIMITERS " \t\r\n\a"
@@ -48,6 +49,7 @@ char* getCommand(void);
 char* idCommand(char *);
 int runBuiltin(char **);
 
+
 char hostname[256];
 char username[256];
 char cwd[2017];
@@ -59,6 +61,31 @@ int background[1000] = {0};
 char **background_process;
 int bgpointer = 0;
 char currentDIR[2017];
+pid_t childPID = -1;
+char nowProcess[1000];
+
+void catchCTRL_C(int sig)
+{
+	// printf("\nCTRL C caught\n");
+	printf("\n");
+	// printf("%d - PID CURRENT\n", childPID );
+	if(childPID != -1)
+		kill(childPID, SIGINT);
+}
+
+void catchCTRL_Z(int sig)
+{
+	// printf("\nCTRL Z caught\n");
+	printf("\n");
+	printf("%d - PID CURRENT\n", childPID );
+	if(childPID != -1)
+	{	
+		kill(childPID, SIGTSTP);
+		strcpy(background_process[bgpointer] , nowProcess);
+		background[bgpointer++] = childPID;
+		printf(KMAG "[+] %d %s\n" RESET, childPID, nowProcess);		
+	}
+}
 
 int main(int argc, char const *argv[])
 {
@@ -91,10 +118,13 @@ void shell_loop(void)
 	{
 		background_process[i] = malloc(sizeof(char)*100);
 	}
-
+	// signal(SIGTSTP, catchCTRL_Z);
 	while (out)
 	{
+	signal(SIGTSTP, catchCTRL_Z);
+	signal(SIGINT, catchCTRL_C);		
 		bg = 0;
+		childPID = -1;
 		// getwd(cwd);
 		getcwd(cwd, 2000);
 		if(strstr(cwd,currentDIR) != NULL)
@@ -142,7 +172,7 @@ void shell_loop(void)
 			if(return_pid == ch_pid)
 				{
 					printf(KGRN "[-] Done %d %s\n" RESET, ch_pid, background_process[i]);
-					free(background_process[i]);
+					// free(background_process[i]);
 				}
 		}	
 	}
@@ -274,6 +304,8 @@ int launchProcess(char **args, int bg)
 	pid_t pid;
 
 	pid = fork();
+	childPID = pid;
+	strcpy(nowProcess, args[0]);
 	if (pid == 0)
 	{
 		if(bg == 1)
@@ -373,7 +405,8 @@ int launchProcess(char **args, int bg)
 	{
 		if(bg == 0)
 		{
-			wait(NULL);
+			// wait(NULL);
+			waitpid(-1,NULL,WUNTRACED);
 		}
 		else
 		{
@@ -414,7 +447,14 @@ int executeCommand(char **args, int bg)
 
 	int boss = runBuiltin(args);
 	if(boss == 1)
+	{
+		// printf("Here\n");
 		return 1;
+	}
+	if(strcmp(args[0],"exit") == 0)
+	{
+		return 0;
+	}
 
 	// printf("%s\n", args[0]);
 	return launchProcess(args, bg);
@@ -504,25 +544,130 @@ int run_unsetenv(char **args)
 	}	
 	return 1;
 }
+
 int run_jobs(char **args)
 {
 	// printf("IN jobs");
-	
+	int i;
+	int count = 0;
+	for (i = 0; i < bgpointer; ++i)
+	{
+		count += 1;
+		printf("[%d] \t %s [%d]\n",count, background_process[i], background[i] );
+		getState(background[i]);
+	}
 	return 1;
 }
-int run_kjob(char **args)
+
+int run_kjob(char **args) // make job number
 {
 	// printf("IN kjob");
+	int count = 0, i;
+	for ( i = 0; args[i] != NULL; ++i)
+		count = count + 1;
+	// printf("%d\n", count );
+
+	if(count >=4)
+			printf(RED "kjob: Too many arguments\nUsage: kjob <jobNumber> <signalNumber>\n" RESET);
+	else if(count <= 2)
+			printf(RED "kjob: Too few arguments\nUsage: kjob <jobNumber> <signalNumber>\n" RESET);
+	else
+	{
+		int pid = atoi(args[1]);
+		int sig = atoi(args[2]);
+		int flag = 1;
+		for (i = 0; i < bgpointer; ++i)
+		{
+			if(background[i] == pid)
+			{
+				flag = 0;
+				kill(pid, sig);
+				printf("Killed %d - %s\n" , pid, background_process[i]);
+				break;
+			}
+		}
+		if(flag == 1)
+			printf("No such pid found\n");
+	}
+
 	return 1;
 }
 int run_fg(char **args)
 {
 	// printf("IN fg");
+	// printf("IN kjob");
+	int count = 0, i;
+	for ( i = 0; args[i] != NULL; ++i)
+		count = count + 1;
+	// printf("%d\n", count );
+
+	if(count >=3)
+			printf(RED "fg: Too many arguments\nUsage: fg <jobNumber>\n" RESET);
+	else if(count <= 1)
+			printf(RED "fg: Too few arguments\nUsage: fg <jobNumber>\n" RESET);
+	else
+	{
+
+		int pid = atoi(args[1]);
+		int flag = 1;
+		kill(pid, SIGCONT);
+		// kill(pid, SIGTTIN);
+		// kill(pid, SIGTTOU);
+		wait(NULL);
+
+		// kill(pid, SIGTTIN);
+
+			// for (i = 0; i < bgpointer; ++i)
+		// {
+		// 	if(background[i] == pid)
+		// 	{
+		// 		flag = 0;
+		// 		kill(pid, SIGCONT);
+		// 		printf("BG'd %d - %s\n" , pid, background_process[i]);
+		// 		break;
+		// 	}
+		// }
+		// if(flag == 1)
+		// 	printf("No such pid found\n");
+	}
+
 	return 1;
 }
-int run_bg(char **args)
+int run_bg(char **args) // make jobnumber
 {
 	// printf("IN bg");
+	// printf("IN kjob");
+	int count = 0, i;
+	for ( i = 0; args[i] != NULL; ++i)
+		count = count + 1;
+	// printf("%d\n", count );
+
+	if(count >=3)
+			printf(RED "bg: Too many arguments\nUsage: bg <jobNumber>\n" RESET);
+	else if(count <= 1)
+			printf(RED "bg: Too few arguments\nUsage: bg <jobNumber>\n" RESET);
+	else
+	{
+
+		int pid = atoi(args[1]);
+		int flag = 1;
+		kill(pid, SIGCONT);
+		// kill(pid, SIGTTIN);
+
+			// for (i = 0; i < bgpointer; ++i)
+		// {
+		// 	if(background[i] == pid)
+		// 	{
+		// 		flag = 0;
+		// 		kill(pid, SIGCONT);
+		// 		printf("BG'd %d - %s\n" , pid, background_process[i]);
+		// 		break;
+		// 	}
+		// }
+		// if(flag == 1)
+		// 	printf("No such pid found\n");
+	}
+
 	return 1;
 }
 int run_overkill(char **args)

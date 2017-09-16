@@ -26,3 +26,4 @@
 int run_pinfo(char **);
 void printPinfo(char **, int* );
 void printProcess(pid_t);
+void getState(pid_t);
