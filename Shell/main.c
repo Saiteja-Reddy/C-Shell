@@ -121,8 +121,8 @@ void shell_loop(void)
 	// signal(SIGTSTP, catchCTRL_Z);
 	while (out)
 	{
-	signal(SIGTSTP, catchCTRL_Z);
-	signal(SIGINT, catchCTRL_C);		
+		signal(SIGTSTP, catchCTRL_Z);
+		signal(SIGINT, catchCTRL_C);		
 		bg = 0;
 		childPID = -1;
 		// getwd(cwd);
@@ -313,6 +313,7 @@ int launchProcess(char **args, int bg)
 			// printf("Background\n");
 			if(setpgid(0,0) == 0)
 			{
+
 				// pid_t processid;
 				// processid = getpid();
 				// printf("Process in BG now  [+]%d\n" , processid);
@@ -360,6 +361,7 @@ int launchProcess(char **args, int bg)
 		args_table[args_pos++] = nowargs;
 		if(ispiped == 0)
 		{
+			// printf("Here my exe\n");
 			if (execvp(args[0], args) == -1)
 			{
 				perror("Shell"); // Print Approporiate Error
@@ -410,6 +412,8 @@ int launchProcess(char **args, int bg)
 		}
 		else
 		{
+			kill(pid, SIGTSTP);
+			kill(pid, SIGCONT);
 			strcpy(background_process[bgpointer] , args[0]);
 			background[bgpointer++] = pid;
 			printf(KMAG "[+] %d %s\n" RESET, pid, args[0]);
@@ -651,8 +655,16 @@ int run_bg(char **args) // make jobnumber
 
 		int pid = atoi(args[1]);
 		int flag = 1;
-		kill(pid, SIGCONT);
-		// kill(pid, SIGTTIN);
+		if(kill(pid, 0) == -1)
+		{
+			printf("No such Process\n");
+		}
+		else
+		{
+			kill(pid, SIGTSTP);
+			kill(pid, SIGCONT);
+		}
+		// kill(pid, SIGTTOU);
 
 			// for (i = 0; i < bgpointer; ++i)
 		// {
