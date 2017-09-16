@@ -37,6 +37,7 @@ int run_pwd(char **);
 int run_exit(char **);
 char* getCommand(void);
 char* idCommand(char *);
+int runBuiltin(char **);
 
 char hostname[256];
 char username[256];
@@ -158,12 +159,7 @@ char* idCommand(char * buffer)
 	charg =  strtok(cpBuffer, DELIMITERS);
 	if(charg!= NULL)
 	{
-		if(strcmp(charg, "echo") == 0)
-		{
-			checkEcho(buffer);
-			return cpBuffer;
-		}
-		else if(strcmp(charg, "nightswatch") == 0)
+		if(strcmp(charg, "nightswatch") == 0)
 		{
 			// printf("Watch Command to be executed Here\n");
 			int *args_len = (int*)malloc(sizeof(int));
@@ -384,6 +380,21 @@ int launchProcess(char **args, int bg)
 	return 1;
 }
 
+int runBuiltin(char **args)
+{
+	int i;
+	int count = sizeof(builtin) / sizeof(char *);
+	for (i = 0; i < count; ++i)
+	{
+		if (strcmp(builtin[i], args[0]) == 0)
+		{
+			return (*builtin_func[i])(args);
+			break;
+		}
+	}
+	return 0;
+}
+
 int executeCommand(char **args, int bg)
 {
 	// if(bg == 1)
@@ -391,14 +402,10 @@ int executeCommand(char **args, int bg)
 	if (args[0] == NULL)
 		return 1;
 
-	int i;
-	int count = sizeof(builtin) / sizeof(char *);
-	for (i = 0; i < count; ++i)
-	{
-		if (strcmp(builtin[i], args[0]) == 0)
-			return (*builtin_func[i])(args);
-	}
-
+	int boss = runBuiltin(args);
+	if(boss == 1)
+		return 1;
+	
 	// printf("%s\n", args[0]);
 	return launchProcess(args, bg);
 }
