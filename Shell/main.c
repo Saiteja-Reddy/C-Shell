@@ -37,6 +37,7 @@ int run_pwd(char **);
 int run_exit(char **);
 char* getCommand(void);
 char* idCommand(char *);
+int checkforBuiltin(char **);
 
 char hostname[256];
 char username[256];
@@ -95,7 +96,6 @@ void shell_loop(void)
 		
 		for (j = 0; j < *(semi_args_len); ++j)
 		{
-			// printf("%s -- Command\n", commands[j] );
 				backArgs = splitBackCommand(commands[j], back_args_len);
 				if(*back_args_len == 1)
 				{
@@ -319,9 +319,13 @@ int launchProcess(char **args, int bg)
 		args_table[args_pos++] = nowargs;
 		if(ispiped == 0)
 		{
-			if (execvp(args[0], args) == -1)
+			int BI = checkforBuiltin(args);
+			if(BI == 0)
 			{
-				perror("Shell"); // Print Approporiate Error
+				if (execvp(args[0], args) == -1)
+				{
+					perror("Shell"); // Print Approporiate Error
+				}
 			}
 		}
 		else
@@ -338,9 +342,13 @@ int launchProcess(char **args, int bg)
 				if(npid == 0)
 				{
 					dup2(pipe_p[1],1);
-					if(execvp(args_table[i][0], args_table[i]) == -1)
+					int BI = checkforBuiltin(args_table[i]);
+					if(BI == 0)
 					{
-						perror("Shell");
+						if(execvp(args_table[i][0], args_table[i]) == -1)
+						{
+							perror("Shell");
+						}
 					}
 					abort();
 				} 
@@ -348,10 +356,12 @@ int launchProcess(char **args, int bg)
 				dup2(pipe_p[0], 0);
 				close(pipe_p[1]);
 			}
-
-			if(execvp(args_table[i][0], args_table[i]) == -1)
-					perror("Shell");
-
+			int BI = checkforBuiltin(args_table[i]);
+			if(BI == 0)
+			{
+				if(execvp(args_table[i][0], args_table[i]) == -1)
+						perror("Shell");
+			}
 		}
 		for (int i = 0; i < args_pos; ++i)
 		{
@@ -388,6 +398,12 @@ int executeCommand(char **args, int bg)
 	if (args[0] == NULL)
 		return 1;
 
+	// printf("%s\n", args[0]);
+	return launchProcess(args, bg);
+}
+
+int checkforBuiltin(char **args)
+{
 	int i;
 	int count = sizeof(builtin) / sizeof(char *);
 	for (i = 0; i < count; ++i)
@@ -395,12 +411,8 @@ int executeCommand(char **args, int bg)
 		if (strcmp(builtin[i], args[0]) == 0)
 			return (*builtin_func[i])(args);
 	}
-
-	// printf("%s\n", args[0]);
-	return launchProcess(args, bg);
+	return 0;
 }
-
-
 
 int run_cd(char **args)
 {
