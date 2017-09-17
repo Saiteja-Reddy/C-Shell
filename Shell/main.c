@@ -2,6 +2,7 @@
 #include "echo_implement.h"
 #include "nightswatch_implement.h"
 #include "pinfo_implement.h"
+#include "jobs_ll.h"
 
 #include <ctype.h>
 #include <signal.h>
@@ -26,6 +27,7 @@
 #define MAG   "\x1B[35m"
 #define CYN   "\x1B[36m"
 #define WHT   "\x1B[37m"
+
 
 void shell_loop(void);
 int launchProcess(char **, int);
@@ -57,38 +59,59 @@ char *wd;
 char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo" , "setenv", "unsetenv", "jobs", "kjob", "fg", "bg", "overkill", "quit"}; // HELP
 int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch,
  &run_exit, &run_pinfo , &run_setenv, &run_unsetenv, &run_jobs, &run_kjob, &run_fg, &run_bg, &run_overkill, &run_quit};
-int background[1000] = {0};
-char **background_process;
-int bgpointer = 0;
+
 char currentDIR[2017];
 pid_t childPID = -1;
 char nowProcess[1000];
 
+qjob* head;
+int mainShellPID;
+
 void catchCTRL_C(int sig)
 {
+	signal(SIGINT, SIG_IGN);	
 	// printf("\nCTRL C caught\n");
 	printf("\n");
 	// printf("%d - PID CURRENT\n", childPID );
+	if(getpid() != mainShellPID)
+		return;
+
 	if(childPID != -1)
+	{
+		printf("%d - to send killsignal\n", childPID );
 		kill(childPID, SIGINT);
+	}
+	signal(SIGINT, catchCTRL_C);	
+
 }
 
 void catchCTRL_Z(int sig)
 {
+	signal(SIGTSTP, SIG_IGN);
+
+	if(getpid() != mainShellPID)
+		return;
 	// printf("\nCTRL Z caught\n");
 	printf("\n");
 	printf("%d - PID CURRENT\n", childPID );
+	printf("%d - Here in \n", getpid() );
 	if(childPID != -1)
 	{	
+		printf("%d - to send killsignal\n", childPID );
 		kill(childPID, SIGTSTP);
-		strcpy(background_process[bgpointer] , nowProcess);
-		background[bgpointer++] = childPID;
+		// kill(childPID, SIGSTOP);
+		addtoLL(head, nowProcess , childPID);		
 		printf(KMAG "[+] %d %s\n" RESET, childPID, nowProcess);		
 	}
+	printLLsize(head);
+	signal(SIGTSTP, catchCTRL_Z);	
 }
 
 int main(int argc, char const *argv[])
 {
+	head = (qjob*)malloc(sizeof(qjob));
+	head->next = NULL;
+	mainShellPID = getpid();
 	int i, j, flag;
 	int userid = getuid();
 	struct passwd *uinfo = getpwuid(userid);
@@ -113,16 +136,10 @@ void shell_loop(void)
 	int *semi_args_len = (int*)malloc(sizeof(int));
 	int *back_argCommand_len = (int*)malloc(sizeof(int));
 	int bg = 0;
-	background_process = malloc(sizeof(char*)*1000);
-	for (i = 0; i < 1000; ++i)
-	{
-		background_process[i] = malloc(sizeof(char)*100);
-	}
-	// signal(SIGTSTP, catchCTRL_Z);
-	while (out)
-	{
 		signal(SIGTSTP, catchCTRL_Z);
-		signal(SIGINT, catchCTRL_C);		
+		signal(SIGINT, catchCTRL_C);	
+	while (out)
+	{	
 		bg = 0;
 		childPID = -1;
 		// getwd(cwd);
@@ -163,18 +180,7 @@ void shell_loop(void)
 				}
 		
 		}	
-
-		for (i = 0; i < bgpointer; ++i)
-		{
-			// printf("Here at BG\n");
-			pid_t ch_pid = background[i];
-			pid_t return_pid = waitpid(ch_pid, NULL, WNOHANG);
-			if(return_pid == ch_pid)
-				{
-					printf(KGRN "[-] Done %d %s\n" RESET, ch_pid, background_process[i]);
-					// free(background_process[i]);
-				}
-		}	
+			printDoneJobs(head);	
 	}
 	free(commands);
 	free(args);
@@ -308,12 +314,13 @@ int launchProcess(char **args, int bg)
 	strcpy(nowProcess, args[0]);
 	if (pid == 0)
 	{
+		// signal(SIGINT, SIG_IGN);
+		// signal(SIGTSTP, SIG_IGN);
 		if(bg == 1)
 		{
 			// printf("Background\n");
 			if(setpgid(0,0) == 0)
 			{
-
 				// pid_t processid;
 				// processid = getpid();
 				// printf("Process in BG now  [+]%d\n" , processid);
@@ -414,8 +421,7 @@ int launchProcess(char **args, int bg)
 		{
 			kill(pid, SIGTSTP);
 			kill(pid, SIGCONT);
-			strcpy(background_process[bgpointer] , args[0]);
-			background[bgpointer++] = pid;
+			addtoLL(head, args[0], pid);
 			printf(KMAG "[+] %d %s\n" RESET, pid, args[0]);
 		}
 	}
@@ -552,14 +558,7 @@ int run_unsetenv(char **args)
 int run_jobs(char **args)
 {
 	// printf("IN jobs");
-	int i;
-	int count = 0;
-	for (i = 0; i < bgpointer; ++i)
-	{
-		count += 1;
-		printf("[%d] \t %s [%d]\n",count, background_process[i], background[i] );
-		getState(background[i]);
-	}
+	printLL(head);
 	return 1;
 }
 
@@ -579,18 +578,7 @@ int run_kjob(char **args) // make job number
 	{
 		int pid = atoi(args[1]);
 		int sig = atoi(args[2]);
-		int flag = 1;
-		for (i = 0; i < bgpointer; ++i)
-		{
-			if(background[i] == pid)
-			{
-				flag = 0;
-				kill(pid, sig);
-				printf("Killed %d - %s\n" , pid, background_process[i]);
-				break;
-			}
-		}
-		if(flag == 1)
+		if(!(killLL(head,pid,sig)))
 			printf("No such pid found\n");
 	}
 
@@ -612,27 +600,25 @@ int run_fg(char **args)
 	else
 	{
 
-		int pid = atoi(args[1]);
-		int flag = 1;
-		kill(pid, SIGCONT);
-		// kill(pid, SIGTTIN);
-		// kill(pid, SIGTTOU);
-		wait(NULL);
-
-		// kill(pid, SIGTTIN);
-
-			// for (i = 0; i < bgpointer; ++i)
-		// {
-		// 	if(background[i] == pid)
-		// 	{
-		// 		flag = 0;
-		// 		kill(pid, SIGCONT);
-		// 		printf("BG'd %d - %s\n" , pid, background_process[i]);
-		// 		break;
-		// 	}
-		// }
-		// if(flag == 1)
-		// 	printf("No such pid found\n");
+		int inC = atoi(args[1]);
+		qjob* job_node = getjob(head, inC);
+		if(job_node !=NULL)
+		{
+			int pid = job_node -> pid;
+			int flag = 1;
+			kill(pid, SIGCONT);
+			// kill(pid, SIGTTIN);
+			// kill(pid, SIGTTOU);
+			childPID = pid;	
+			strcpy(nowProcess, job_node->name);
+			removeLL(head, pid);
+			// wait(NULL);
+			waitpid(-1,NULL,WUNTRACED);
+		}
+		else
+		{
+			printf("No such pid exists\n");
+		}
 	}
 
 	return 1;
@@ -653,31 +639,19 @@ int run_bg(char **args) // make jobnumber
 	else
 	{
 
-		int pid = atoi(args[1]);
-		int flag = 1;
-		if(kill(pid, 0) == -1)
+		int inC = atoi(args[1]);
+		qjob* job_node = getjob(head, inC);
+		if(job_node !=NULL)
 		{
-			printf("No such Process\n");
+			int pid = job_node -> pid;
+			int flag = 1;
+			kill(pid, SIGCONT);
 		}
 		else
 		{
-			kill(pid, SIGTSTP);
-			kill(pid, SIGCONT);
+			printf("No such pid exists\n");
 		}
-		// kill(pid, SIGTTOU);
 
-			// for (i = 0; i < bgpointer; ++i)
-		// {
-		// 	if(background[i] == pid)
-		// 	{
-		// 		flag = 0;
-		// 		kill(pid, SIGCONT);
-		// 		printf("BG'd %d - %s\n" , pid, background_process[i]);
-		// 		break;
-		// 	}
-		// }
-		// if(flag == 1)
-		// 	printf("No such pid found\n");
 	}
 
 	return 1;
