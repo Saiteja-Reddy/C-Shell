@@ -69,7 +69,7 @@ int mainShellPID;
 
 void catchCTRL_C(int sig)
 {
-	signal(SIGINT, SIG_IGN);	
+	// signal(SIGINT, SIG_IGN);	
 	// printf("\nCTRL C caught\n");
 	printf("\n");
 	// printf("%d - PID CURRENT\n", childPID );
@@ -87,7 +87,7 @@ void catchCTRL_C(int sig)
 
 void catchCTRL_Z(int sig)
 {
-	signal(SIGTSTP, SIG_IGN);
+	// signal(SIGTSTP, SIG_IGN);
 
 	if(getpid() != mainShellPID)
 		return;
@@ -98,6 +98,7 @@ void catchCTRL_Z(int sig)
 	if(childPID != -1)
 	{	
 		printf("%d - to send killsignal\n", childPID );
+		kill(childPID, SIGTTIN);	
 		kill(childPID, SIGTSTP);
 		// kill(childPID, SIGSTOP);
 		addtoLL(head, nowProcess , childPID);		
@@ -419,7 +420,8 @@ int launchProcess(char **args, int bg)
 		}
 		else
 		{
-			kill(pid, SIGTSTP);
+			kill(pid, SIGTTIN);
+			// kill(pid, SIGTSTP);
 			kill(pid, SIGCONT);
 			addtoLL(head, args[0], pid);
 			printf(KMAG "[+] %d %s\n" RESET, pid, args[0]);
@@ -645,7 +647,9 @@ int run_bg(char **args) // make jobnumber
 		{
 			int pid = job_node -> pid;
 			int flag = 1;
+			kill(pid, SIGTTIN);
 			kill(pid, SIGCONT);
+			// signal(SIGINT,SIG_IGN);
 		}
 		else
 		{
