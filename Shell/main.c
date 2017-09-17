@@ -578,10 +578,20 @@ int run_kjob(char **args) // make job number
 			printf(RED "kjob: Too few arguments\nUsage: kjob <jobNumber> <signalNumber>\n" RESET);
 	else
 	{
-		int pid = atoi(args[1]);
+
+		int inC = atoi(args[1]);
 		int sig = atoi(args[2]);
-		if(!(killLL(head,pid,sig)))
-			printf("No such pid found\n");
+		qjob* job_node = getjob(head, inC);
+		if(job_node !=NULL)
+		{
+			int pid = job_node -> pid;
+			kill(pid,sig);
+		}
+		else
+		{
+			printf("No such pid exists\n");
+		}
+
 	}
 
 	return 1;
