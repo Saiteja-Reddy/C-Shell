@@ -3,7 +3,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void addtoLL(qjob* head, char name[], pid_t pid )
+void addtoLL(qjob* head, char name[], pid_t pid , int stat)
 {
 	qjob* curr = head;
 	qjob* now;
@@ -16,6 +16,7 @@ void addtoLL(qjob* head, char name[], pid_t pid )
 			strcpy(now->name, name);
 			now->pid = pid;
 			now->next = NULL;
+			now->stat = stat;
 			curr->next = now;
 			break;
 		}
@@ -43,6 +44,27 @@ qjob* getjob(qjob* head, int Cpid)
 	}
 }
 
+void changestatLL(qjob* head, pid_t pid, int stat)
+{
+	qjob* curr = head;
+	qjob* now;
+	int count = 0;
+	while(curr)
+	{
+		now = curr->next;
+		count += 1;
+		if(now != NULL)
+		{
+			if(now->pid == pid)
+			{
+				now->stat = stat;
+				break;
+			}
+		}
+		curr = now;
+	}
+}
+
 void printLLsize(qjob* head)
 {
 	qjob* curr = head->next;
@@ -62,8 +84,8 @@ void printLL(qjob* head)
 	while(curr)
 	{
 		count += 1;
-		printf("[%d] \t %s [%d]\n",count, curr->name, curr->pid );
-		getState(curr->pid);
+		printf("[%d] \t %s \t %s \t [%d]\n",count, (curr->stat == 0)?"Stopped":"Running", curr->name, curr->pid);
+		// getState(curr->pid);
 		curr = curr->next;
 	}
 }

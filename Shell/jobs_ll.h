@@ -25,11 +25,12 @@ struct node
 {
 	char name[1000];
 	pid_t pid;
+	int stat;
 	struct node *next;
 };
 typedef struct node qjob;
 
-void addtoLL(qjob*, char [], pid_t);
+void addtoLL(qjob*, char [], pid_t, int);
 void printLL(qjob*);
 void removeLL(qjob*, pid_t);
 int killLL(qjob* , pid_t , int );
@@ -37,3 +38,4 @@ void printDoneJobs(qjob* );
 void printLLsize(qjob*);
 qjob* getjob(qjob* , int );
 void killALL(qjob*);
+void changestatLL(qjob*, pid_t , int);
