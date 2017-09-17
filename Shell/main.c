@@ -663,6 +663,7 @@ int run_bg(char **args) // make jobnumber
 int run_overkill(char **args)
 {
 	// printf("IN overkill");
+	killALL(head);
 	return 1;
 }
 int run_quit(char **args)

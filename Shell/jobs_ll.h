@@ -36,3 +36,4 @@ int killLL(qjob* , pid_t , int );
 void printDoneJobs(qjob* );
 void printLLsize(qjob*);
 qjob* getjob(qjob* , int );
+void killALL(qjob*);

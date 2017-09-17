@@ -112,6 +112,18 @@ int killLL(qjob* head, pid_t pid, int sig)
 	return 0;
 }
 
+void killALL(qjob* head)
+{
+	qjob* curr = head->next;
+	int copy;
+	while(curr)
+	{	
+		copy = curr->pid;
+		curr = curr->next;
+		killLL(head, copy, SIGINT);
+	}
+}
+
 void printDoneJobs(qjob* head)
 {
 	qjob* curr = head;
