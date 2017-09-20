@@ -342,22 +342,44 @@ int launchProcess(char **args, int bg)
 		char **nowargs = malloc(sizeof(char*) * 100);
 		int pos = 0;
 		int nowargspos = 0;
-		for (int i = 0; args[i] != NULL; ++i)
+		int i, counter = 0;
+		for (i = 0; args[i] != NULL; ++i)
+			counter++;		
+		for (i = 0; args[i] != NULL; ++i)
 		{
 			if(strcmp(args[i], "<") == 0)
 			{
 				isin = 1;
-				infd = open(args[++i], O_RDONLY);
+				if(counter > i + 1)
+					infd = open(args[++i], O_RDONLY);
+				else
+				{
+					fprintf(stderr, RED "shell: Please give an input file\n" RESET);
+					exit(1);
+				}
+
 			}
 			else if(strcmp(args[i], ">") == 0)
 			{
 				isout = 1;
-				outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+				if(counter > i + 1)
+					outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+				else
+				{
+					fprintf(stderr, RED "shell: Please give an output file to write to\n" RESET);
+					exit(1);
+				}				
 			}
 			else if(strcmp(args[i], ">>") == 0)
 			{
 				isout = 1;
-				outfd = open(args[++i], O_WRONLY | O_APPEND | O_CREAT, 0644);
+				if(counter > i + 1)
+					outfd = open(args[++i], O_WRONLY | O_APPEND | O_CREAT, 0644);
+				else
+				{
+					fprintf(stderr, RED "shell: Please give an output file to append\n" RESET);
+					exit(1);
+				}						
 			}			
 			else
 			{
@@ -387,7 +409,7 @@ int launchProcess(char **args, int bg)
 				close(infd);
 			if(isout)
 				close(outfd);
-			
+
 		}
 		for (int i = 0; i < pos; ++i)
 		{
