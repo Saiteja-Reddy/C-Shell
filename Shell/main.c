@@ -510,6 +510,8 @@ int run_exit(char **args)
 {
 	// printf("IN EXIT : %s\n", args[0]);
 	// exit(1);
+	char* args1[] = {""};
+	run_overkill(args1);
 	return 0;
 }
 
