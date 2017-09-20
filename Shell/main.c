@@ -337,32 +337,39 @@ int launchProcess(char **args, int bg)
 
 		int isin = 0;
 		int isout = 0;
-		int infd = -1;
-		int outfd = -1;
-		char **nowargs;
+		int infd = 0;
+		int outfd = 1;
+		char **nowargs = malloc(sizeof(char*) * 100);
 		int pos = 0;
+		int nowargspos = 0;
 		for (int i = 0; args[i] != NULL; ++i)
 		{
 			if(strcmp(args[i], "<") == 0)
 			{
 				isin = 1;
-				int largs = pos;
-				nowargs = malloc(sizeof(char*) * largs);
-				int j = 0;
-				for (j = 0; j < largs; ++j)
-				{
-					nowargs[j] = args[j];
-				}
-				nowargs[j++] = 0;
 				infd = open(args[++i], O_RDONLY);
-				break;
 			}
+			else if(strcmp(args[i], ">") == 0)
+			{
+				isout = 1;
+				outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+			}
+			else if(strcmp(args[i], ">>") == 0)
+			{
+				isout = 1;
+				outfd = open(args[++i], O_WRONLY | O_APPEND | O_CREAT, 0644);
+			}			
+			else
+			{
+				nowargs[nowargspos++] = args[i];
+			}
+
 			pos = pos + 1;
 		}
 
-		if(isin == 0)
+		if(isin == 0 && isout == 0)
 		{
-			printf("Here my exe\n");
+			// printf("Here my exe\n");
 			if (execvp(args[0], args) == -1)
 			{
 				perror("Shell"); // Print Approporiate Error
@@ -372,34 +379,15 @@ int launchProcess(char **args, int bg)
 		{
 			// printf("Redirect Here Stuff Here\n");
 			dup2(infd,0);
+			dup2(outfd,1);
 			if(execvp(nowargs[0], nowargs) == -1)
 					perror("Shell");
-
-			// int i;
-			// for (i = 0; i < args_pos - 1; ++i)
-			// {
-			// 	int pipe_p[2];
-			// 	pipe(pipe_p);
-
-			// 	pid_t npid = fork();
-
-			// 	if(npid == 0)
-			// 	{
-			// 		dup2(pipe_p[1],1);
-			// 		if(execvp(args_table[i][0], args_table[i]) == -1)
-			// 		{
-			// 			perror("Shell");
-			// 		}
-			// 		abort();
-			// 	} 
-
-			// 	dup2(pipe_p[0], 0);
-			// 	close(pipe_p[1]);
-			// }
-
-			// if(execvp(args_table[i][0], args_table[i]) == -1)
-			// 		perror("Shell");
-
+			
+			if(isin)
+				close(infd);
+			if(isout)
+				close(outfd);
+			
 		}
 		for (int i = 0; i < pos; ++i)
 		{
