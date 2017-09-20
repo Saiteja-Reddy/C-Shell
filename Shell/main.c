@@ -335,43 +335,34 @@ int launchProcess(char **args, int bg)
 			}
 		}
 
-		int ispiped = 0;
-		char ***args_table = malloc(sizeof(char**) * 100);
-		int args_pos = 0;
+		int isin = 0;
+		int isout = 0;
+		int infd = -1;
+		int outfd = -1;
+		char **nowargs;
 		int pos = 0;
-		int inipos = 0;
 		for (int i = 0; args[i] != NULL; ++i)
 		{
-			if(strcmp(args[i], "|") == 0)
+			if(strcmp(args[i], "<") == 0)
 			{
-				ispiped = 1;
-				int largs = (pos - inipos);
-				char **nowargs = malloc(sizeof(char*) * largs);
+				isin = 1;
+				int largs = pos;
+				nowargs = malloc(sizeof(char*) * largs);
 				int j = 0;
-				int k = 0;
-				for (j = inipos; j < inipos+largs; ++j)
+				for (j = 0; j < largs; ++j)
 				{
-					nowargs[k++] = args[j];
+					nowargs[j] = args[j];
 				}
-				nowargs[k++] = 0;
-				args_table[args_pos++] = nowargs;
-				inipos = pos + 1;
+				nowargs[j++] = 0;
+				infd = open(args[++i], O_RDONLY);
+				break;
 			}
 			pos = pos + 1;
 		}
-		int largs = (pos - inipos);
-		char **nowargs = malloc(sizeof(char*) * largs);
-		int j = 0;
-		int k = 0;
-		for (j = inipos; j < inipos+largs; ++j)
+
+		if(isin == 0)
 		{
-			nowargs[k++] = args[j];
-		}
-		nowargs[k++] = 0;
-		args_table[args_pos++] = nowargs;
-		if(ispiped == 0)
-		{
-			// printf("Here my exe\n");
+			printf("Here my exe\n");
 			if (execvp(args[0], args) == -1)
 			{
 				perror("Shell"); // Print Approporiate Error
@@ -379,38 +370,42 @@ int launchProcess(char **args, int bg)
 		}
 		else
 		{
-			// printf("Pipe Stuff Here\n");
-			int i;
-			for (i = 0; i < args_pos - 1; ++i)
-			{
-				int pipe_p[2];
-				pipe(pipe_p);
-
-				pid_t npid = fork();
-
-				if(npid == 0)
-				{
-					dup2(pipe_p[1],1);
-					if(execvp(args_table[i][0], args_table[i]) == -1)
-					{
-						perror("Shell");
-					}
-					abort();
-				} 
-
-				dup2(pipe_p[0], 0);
-				close(pipe_p[1]);
-			}
-
-			if(execvp(args_table[i][0], args_table[i]) == -1)
+			// printf("Redirect Here Stuff Here\n");
+			dup2(infd,0);
+			if(execvp(nowargs[0], nowargs) == -1)
 					perror("Shell");
 
+			// int i;
+			// for (i = 0; i < args_pos - 1; ++i)
+			// {
+			// 	int pipe_p[2];
+			// 	pipe(pipe_p);
+
+			// 	pid_t npid = fork();
+
+			// 	if(npid == 0)
+			// 	{
+			// 		dup2(pipe_p[1],1);
+			// 		if(execvp(args_table[i][0], args_table[i]) == -1)
+			// 		{
+			// 			perror("Shell");
+			// 		}
+			// 		abort();
+			// 	} 
+
+			// 	dup2(pipe_p[0], 0);
+			// 	close(pipe_p[1]);
+			// }
+
+			// if(execvp(args_table[i][0], args_table[i]) == -1)
+			// 		perror("Shell");
+
 		}
-		for (int i = 0; i < args_pos; ++i)
+		for (int i = 0; i < pos; ++i)
 		{
-			 free(args_table[i]);
+			 free(nowargs[i]);
 		}
-		free(args_table);
+		free(nowargs);
 		exit(1);
 	}
 	else if (pid > 0)
