@@ -56,9 +56,11 @@ char hostname[256];
 char username[256];
 char cwd[2017];
 char *wd;
-char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo" , "setenv", "unsetenv", "jobs", "kjob", "fg", "bg", "overkill", "quit"}; // HELP
+char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo" , 
+"setenv", "unsetenv", "jobs", "kjob", "fg", "bg", "overkill", "quit"}; // HELP
 int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch,
- &run_exit, &run_pinfo , &run_setenv, &run_unsetenv, &run_jobs, &run_kjob, &run_fg, &run_bg, &run_overkill, &run_quit};
+ &run_exit, &run_pinfo , &run_setenv, &run_unsetenv, &run_jobs, &run_kjob, &run_fg, &run_bg,
+ &run_overkill, &run_quit};
 
 char currentDIR[2017];
 pid_t childPID = -1;
@@ -680,5 +682,5 @@ int run_overkill(char **args)
 int run_quit(char **args)
 {
 	// printf("IN quit");
-	return 1;
+	return 0;
 }
