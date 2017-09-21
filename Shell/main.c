@@ -219,19 +219,19 @@ char* idCommand(char * buffer)
 			free(args_len);
 			return cpBuffer;
 		}
-		else if(strcmp(charg, "pinfo")==0)
-		{
-		//	printf("Pinfo must be executed\n");
-			int *args_len = (int*)malloc(sizeof(int));
-			char **args;
-			args = splitCommand(buffer, args_len);	
-			printPinfo(args, args_len);		
+		// else if(strcmp(charg, "pinfo")==0)
+		// {
+		// //	printf("Pinfo must be executed\n");
+		// 	int *args_len = (int*)malloc(sizeof(int));
+		// 	char **args;
+		// 	args = splitCommand(buffer, args_len);	
+		// 	printPinfo(args, args_len);		
 
-			free(args);
-			free(args_len);
+		// 	free(args);
+		// 	free(args_len);
 		
-			return cpBuffer;
-		}
+		// 	return cpBuffer;
+		// }
 	}
 	free(cpBuffer);
 	return buffer;
@@ -413,11 +413,11 @@ int launchProcess(char **args, int bg)
 				if(isout)
 					close(outfd);	
 
-				for (int i = 0; i < pos; ++i)
-				{
-					 free(nowargs[i]);
-				}
-				free(nowargs);		
+				// for (int i = 0; i < pos; ++i)
+				// {
+				// 	 free(nowargs[i]);
+				// }
+				// free(nowargs);		
 
 		}
 		else
@@ -473,11 +473,11 @@ int launchProcess(char **args, int bg)
 						if(isout)
 							close(outfd);						
 
-						for (int i = 0; i < pos; ++i)
-						{
-							 free(nowargs[i]);
-						}
-						free(nowargs);		
+						// for (int i = 0; i < pos; ++i)
+						// {
+						// 	 free(nowargs[i]);
+						// }
+						// free(nowargs);		
 
 					abort();
 				} 
@@ -522,11 +522,11 @@ int launchProcess(char **args, int bg)
 				if(isout)
 					close(outfd);	
 
-				for (int i = 0; i < pos; ++i)
-				{
-					 free(nowargs[i]);
-				}
-				free(nowargs);					
+				// for (int i = 0; i < pos; ++i)
+				// {
+				// 	 free(nowargs[i]);
+				// }
+				// free(nowargs);					
 
 		}
 		for (int i = 0; i < args_pos; ++i)
