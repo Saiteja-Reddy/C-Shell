@@ -50,7 +50,7 @@ int run_quit(char **);
 char* getCommand(void);
 char* idCommand(char *);
 int runBuiltin(char **);
-
+char** redirectCode(char **, int*, int *, int *, int *, int *);
 
 char hostname[256];
 char username[256];
@@ -335,59 +335,26 @@ int launchProcess(char **args, int bg)
 			}
 		}
 
-		int isin = 0;
-		int isout = 0;
-		int infd = 0;
-		int outfd = 1;
-		char **nowargs = malloc(sizeof(char*) * 100);
-		int pos = 0;
-		int nowargspos = 0;
-		int i, counter = 0;
-		for (i = 0; args[i] != NULL; ++i)
-			counter++;		
-		for (i = 0; args[i] != NULL; ++i)
-		{
-			if(strcmp(args[i], "<") == 0)
-			{
-				isin = 1;
-				if(counter > i + 1)
-					infd = open(args[++i], O_RDONLY);
-				else
-				{
-					fprintf(stderr, RED "shell: Please give an input file\n" RESET);
-					exit(1);
-				}
+		// Hnadle Redirect here -- isin , isout , nowargs, infd , outfd
 
-			}
-			else if(strcmp(args[i], ">") == 0)
-			{
-				isout = 1;
-				if(counter > i + 1)
-					outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
-				else
-				{
-					fprintf(stderr, RED "shell: Please give an output file to write to\n" RESET);
-					exit(1);
-				}				
-			}
-			else if(strcmp(args[i], ">>") == 0)
-			{
-				isout = 1;
-				if(counter > i + 1)
-					outfd = open(args[++i], O_WRONLY | O_APPEND | O_CREAT, 0644);
-				else
-				{
-					fprintf(stderr, RED "shell: Please give an output file to append\n" RESET);
-					exit(1);
-				}						
-			}			
-			else
-			{
-				nowargs[nowargspos++] = args[i];
-			}
+		int *isin_p  = (int*)malloc(sizeof(int));
+		int *isout_p = (int*)malloc(sizeof(int)) ;
+		int *infd_p  = (int*)malloc(sizeof(int));
+		int *outfd_p = (int*)malloc(sizeof(int));
+		int *pos_p = (int*)malloc(sizeof(int));
+		char **nowargs = redirectCode(args, isin_p, isout_p, infd_p, outfd_p, pos_p);
 
-			pos = pos + 1;
-		}
+		int isin = *isin_p;
+		int isout = *isout_p;
+		int infd = *infd_p;
+		int outfd = *outfd_p;
+		int pos = *pos_p;
+
+		free(isin_p);
+		free(isout_p);
+		free(infd_p);
+		free(outfd_p);
+		free(pos_p);
 
 		if(isin == 0 && isout == 0)
 		{
@@ -690,4 +657,70 @@ int run_quit(char **args)
 {
 	// printf("IN quit");
 	return 0;
+}
+
+
+char** redirectCode(char **args, int *isin_p, int *isout_p, int *infd_p, int *outfd_p, int* pos_p)
+{
+	int isin = 0;
+	int isout = 0;
+	int infd = 0;
+	int outfd = 1;
+	char **nowargs = malloc(sizeof(char*) * 100);
+	int pos = 0;
+	int nowargspos = 0;
+	int i, counter = 0;
+	for (i = 0; args[i] != NULL; ++i)
+		counter++;		
+	for (i = 0; args[i] != NULL; ++i)
+	{
+		if(strcmp(args[i], "<") == 0)
+		{
+			isin = 1;
+			if(counter > i + 1)
+				infd = open(args[++i], O_RDONLY);
+			else
+			{
+				fprintf(stderr, RED "shell: Please give an input file\n" RESET);
+				exit(1);
+			}
+
+		}
+		else if(strcmp(args[i], ">") == 0)
+		{
+			isout = 1;
+			if(counter > i + 1)
+				outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+			else
+			{
+				fprintf(stderr, RED "shell: Please give an output file to write to\n" RESET);
+				exit(1);
+			}				
+		}
+		else if(strcmp(args[i], ">>") == 0)
+		{
+			isout = 1;
+			if(counter > i + 1)
+				outfd = open(args[++i], O_WRONLY | O_APPEND | O_CREAT, 0644);
+			else
+			{
+				fprintf(stderr, RED "shell: Please give an output file to append\n" RESET);
+				exit(1);
+			}						
+		}			
+		else
+		{
+			nowargs[nowargspos++] = args[i];
+		}
+
+		pos = pos + 1;
+	}
+
+	*isin_p = isin;
+	*isout_p = isout;
+	*infd_p = infd;
+	*outfd_p = outfd;
+	*pos_p = pos;
+
+	return nowargs;
 }
