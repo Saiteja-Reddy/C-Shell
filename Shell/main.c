@@ -303,6 +303,8 @@ char **splitCommand(char *line, int* args_len)
 		args[position++] = arg;
 		arg = strtok(NULL, DELIMITERS);
 	}
+	if(position%2 ==1)
+		args[position++] = 0;		
 	args[position] = NULL;
 	*args_len = position;
 	return args;
