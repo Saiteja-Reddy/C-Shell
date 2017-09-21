@@ -151,9 +151,9 @@ char* addToPrintBuf(char *printBuffer, char now, int *position)
 int run_echo(char **args)
 {	
 	int i;
-	printf("Testing2\n");
+	// printf("Testing2\n");
 	char *buffer = malloc(sizeof(char) * 1000);
-	printf("Testing3\n");
+	// printf("Testing3\n");
 	strcpy(buffer,"echo");
 	for ( i = 1; args[i] != NULL; ++i)
 	{

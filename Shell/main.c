@@ -303,10 +303,10 @@ char **splitCommand(char *line, int* args_len)
 		args[position++] = arg;
 		arg = strtok(NULL, DELIMITERS);
 	}
+	*args_len = position;
 	if(position%2 ==1)
 		args[position++] = 0;		
 	args[position] = NULL;
-	*args_len = position;
 	return args;
 }
 
@@ -374,9 +374,6 @@ int launchProcess(char **args, int bg)
 		args_table[args_pos++] = nowargs;
 		if(ispiped == 0)
 		{
-			// int BI = checkforBuiltin(args);
-			// if(BI == 0)
-			// {
 			// printf("Here in no piped\n");
 				int *isin_p  = (int*)malloc(sizeof(int));
 				int *isout_p = (int*)malloc(sizeof(int)) ;
@@ -402,9 +399,13 @@ int launchProcess(char **args, int bg)
 				if(isout)
 					dup2(outfd,1);	
 
-				if (execvp(nowargs[0], nowargs) == -1)
+				int BI = runBuiltin(nowargs);
+				if(BI == 0)
 				{
-					perror("Shell"); // Print Approporiate Error
+					if (execvp(nowargs[0], nowargs) == -1)
+					{
+						perror("Shell"); // Print Approporiate Error
+					}
 				}
 
 				if(isin)
@@ -418,7 +419,6 @@ int launchProcess(char **args, int bg)
 				}
 				free(nowargs);		
 
-			// }
 		}
 		else
 		{
@@ -434,9 +434,6 @@ int launchProcess(char **args, int bg)
 				if(npid == 0)
 				{
 					dup2(pipe_p[1],1);
-					// int BI = checkforBuiltin(args_table[i]);
-					// if(BI == 0)
-					// {
 
 						int *isin_p  = (int*)malloc(sizeof(int));
 						int *isout_p = (int*)malloc(sizeof(int)) ;
@@ -462,9 +459,13 @@ int launchProcess(char **args, int bg)
 						if(isout)
 							dup2(outfd,1);						
 
-						if(execvp(nowargs[0], nowargs) == -1)
+						int BI = runBuiltin(nowargs);
+						if(BI == 0)
 						{
-							perror("Shell");
+							if(execvp(nowargs[0], nowargs) == -1)
+							{
+								perror("Shell");
+							}
 						}
 
 						if(isin)
@@ -478,16 +479,12 @@ int launchProcess(char **args, int bg)
 						}
 						free(nowargs);		
 
-					// }
 					abort();
 				} 
 
 				dup2(pipe_p[0], 0);
 				close(pipe_p[1]);
 			}
-			// int BI = checkforBuiltin(args_table[i]);
-			// if(BI == 0)
-			// {
 
 				int *isin_p  = (int*)malloc(sizeof(int));
 				int *isout_p = (int*)malloc(sizeof(int)) ;
@@ -513,8 +510,12 @@ int launchProcess(char **args, int bg)
 				if(isout)
 					dup2(outfd,1);				
 
-				if(execvp(nowargs[0], nowargs) == -1)
-						perror("Shell");
+				int BI = runBuiltin(nowargs);
+				if(BI == 0)
+				{
+					if(execvp(nowargs[0], nowargs) == -1)
+							perror("Shell");
+				}
 
 				if(isin)
 					close(infd);
@@ -527,7 +528,6 @@ int launchProcess(char **args, int bg)
 				}
 				free(nowargs);					
 
-			// }
 		}
 		for (int i = 0; i < args_pos; ++i)
 		{
@@ -583,12 +583,12 @@ int executeCommand(char **args, int bg)
 	if (args[0] == NULL)
 		return 1;
 
-	int boss = runBuiltin(args);
-	if(boss == 1)
-	{
-		// printf("Here\n");
-		return 1;
-	}
+	// int boss = runBuiltin(args);
+	// if(boss == 1)
+	// {
+	// 	// printf("Here\n");
+	// 	return 1;
+	// }
 	if(strcmp(args[0],"exit") == 0)
 	{
 		return 0;
