@@ -335,54 +335,204 @@ int launchProcess(char **args, int bg)
 			}
 		}
 
-		// Hnadle Redirect here -- isin , isout , nowargs, infd , outfd
 
-		int *isin_p  = (int*)malloc(sizeof(int));
-		int *isout_p = (int*)malloc(sizeof(int)) ;
-		int *infd_p  = (int*)malloc(sizeof(int));
-		int *outfd_p = (int*)malloc(sizeof(int));
-		int *pos_p = (int*)malloc(sizeof(int));
-		char **nowargs = redirectCode(args, isin_p, isout_p, infd_p, outfd_p, pos_p);
-
-		int isin = *isin_p;
-		int isout = *isout_p;
-		int infd = *infd_p;
-		int outfd = *outfd_p;
-		int pos = *pos_p;
-
-		free(isin_p);
-		free(isout_p);
-		free(infd_p);
-		free(outfd_p);
-		free(pos_p);
-
-		if(isin == 0 && isout == 0)
+		int ispiped = 0;
+		char ***args_table = malloc(sizeof(char**) * 100);
+		int args_pos = 0;
+		int pos = 0;
+		int inipos = 0;
+		for (int i = 0; args[i] != NULL; ++i)
 		{
-			// printf("Here my exe\n");
-			if (execvp(args[0], args) == -1)
+			if(strcmp(args[i], "|") == 0)
 			{
-				perror("Shell"); // Print Approporiate Error
+				ispiped = 1;
+				int largs = (pos - inipos);
+				char **nowargs = malloc(sizeof(char*) * largs);
+				int j = 0;
+				int k = 0;
+				for (j = inipos; j < inipos+largs; ++j)
+				{
+					nowargs[k++] = args[j];
+				}
+				nowargs[k++] = 0;
+				args_table[args_pos++] = nowargs;
+				inipos = pos + 1;
 			}
+			pos = pos + 1;
+		}
+		int largs = (pos - inipos);
+		char **nowargs = (char**)malloc(sizeof(char*) * largs);
+		int j = 0;
+		int k = 0;
+		for (j = inipos; j < inipos+largs; ++j)
+		{
+			nowargs[k++] = args[j];
+		}
+		nowargs[k++] = 0;
+		args_table[args_pos++] = nowargs;
+		if(ispiped == 0)
+		{
+			// int BI = checkforBuiltin(args);
+			// if(BI == 0)
+			// {
+			// printf("Here in no piped\n");
+				int *isin_p  = (int*)malloc(sizeof(int));
+				int *isout_p = (int*)malloc(sizeof(int)) ;
+				int *infd_p  = (int*)malloc(sizeof(int));
+				int *outfd_p = (int*)malloc(sizeof(int));
+				int *pos_p = (int*)malloc(sizeof(int));
+				char **nowargs = redirectCode(args, isin_p, isout_p, infd_p, outfd_p, pos_p);
+
+				int isin = *isin_p;
+				int isout = *isout_p;
+				int infd = *infd_p;
+				int outfd = *outfd_p;
+				int pos = *pos_p;
+
+				free(isin_p);
+				free(isout_p);
+				free(infd_p);
+				free(outfd_p);
+				free(pos_p);					
+
+				if(isin)
+					dup2(infd,0);
+				if(isout)
+					dup2(outfd,1);	
+
+				if (execvp(nowargs[0], nowargs) == -1)
+				{
+					perror("Shell"); // Print Approporiate Error
+				}
+
+				if(isin)
+					close(infd);
+				if(isout)
+					close(outfd);	
+
+				for (int i = 0; i < pos; ++i)
+				{
+					 free(nowargs[i]);
+				}
+				free(nowargs);		
+
+			// }
 		}
 		else
 		{
-			// printf("Redirect Here Stuff Here\n");
-			dup2(infd,0);
-			dup2(outfd,1);
-			if(execvp(nowargs[0], nowargs) == -1)
-					perror("Shell");
-			
-			if(isin)
-				close(infd);
-			if(isout)
-				close(outfd);
+			// printf("Pipe Stuff Here\n");
+			int i;
+			for (i = 0; i < args_pos - 1; ++i)
+			{
+				int pipe_p[2];
+				pipe(pipe_p);
 
+				pid_t npid = fork();
+
+				if(npid == 0)
+				{
+					dup2(pipe_p[1],1);
+					// int BI = checkforBuiltin(args_table[i]);
+					// if(BI == 0)
+					// {
+
+						int *isin_p  = (int*)malloc(sizeof(int));
+						int *isout_p = (int*)malloc(sizeof(int)) ;
+						int *infd_p  = (int*)malloc(sizeof(int));
+						int *outfd_p = (int*)malloc(sizeof(int));
+						int *pos_p = (int*)malloc(sizeof(int));
+						char **nowargs = redirectCode(args_table[i], isin_p, isout_p, infd_p, outfd_p, pos_p);
+
+						int isin = *isin_p;
+						int isout = *isout_p;
+						int infd = *infd_p;
+						int outfd = *outfd_p;
+						int pos = *pos_p;
+
+						free(isin_p);
+						free(isout_p);
+						free(infd_p);
+						free(outfd_p);
+						free(pos_p);					
+
+						if(isin)
+							dup2(infd,0);
+						if(isout)
+							dup2(outfd,1);						
+
+						if(execvp(nowargs[0], nowargs) == -1)
+						{
+							perror("Shell");
+						}
+
+						if(isin)
+							close(infd);
+						if(isout)
+							close(outfd);						
+
+						for (int i = 0; i < pos; ++i)
+						{
+							 free(nowargs[i]);
+						}
+						free(nowargs);		
+
+					// }
+					abort();
+				} 
+
+				dup2(pipe_p[0], 0);
+				close(pipe_p[1]);
+			}
+			// int BI = checkforBuiltin(args_table[i]);
+			// if(BI == 0)
+			// {
+
+				int *isin_p  = (int*)malloc(sizeof(int));
+				int *isout_p = (int*)malloc(sizeof(int)) ;
+				int *infd_p  = (int*)malloc(sizeof(int));
+				int *outfd_p = (int*)malloc(sizeof(int));
+				int *pos_p = (int*)malloc(sizeof(int));
+				char **nowargs = redirectCode(args_table[i], isin_p, isout_p, infd_p, outfd_p, pos_p);
+
+				int isin = *isin_p;
+				int isout = *isout_p;
+				int infd = *infd_p;
+				int outfd = *outfd_p;
+				int pos = *pos_p;
+
+				free(isin_p);
+				free(isout_p);
+				free(infd_p);
+				free(outfd_p);
+				free(pos_p);					
+
+				if(isin)
+					dup2(infd,0);
+				if(isout)
+					dup2(outfd,1);				
+
+				if(execvp(nowargs[0], nowargs) == -1)
+						perror("Shell");
+
+				if(isin)
+					close(infd);
+				if(isout)
+					close(outfd);	
+
+				for (int i = 0; i < pos; ++i)
+				{
+					 free(nowargs[i]);
+				}
+				free(nowargs);					
+
+			// }
 		}
-		for (int i = 0; i < pos; ++i)
+		for (int i = 0; i < args_pos; ++i)
 		{
-			 free(nowargs[i]);
+			 free(args_table[i]);
 		}
-		free(nowargs);
+		free(args_table);
+
 		exit(1);
 	}
 	else if (pid > 0)
