@@ -56,9 +56,9 @@ char hostname[256];
 char username[256];
 char cwd[2017];
 char *wd;
-char *builtin[] = {"echo", "cd", "ls", "pwd", "nightswatch",  "exit","pinfo" , 
+char *builtin[] = {"echoM" , "cd", "pwd", "nightswatch",  "exit","pinfo" , 
 "setenv", "unsetenv", "jobs", "kjob", "fg", "bg", "overkill", "quit"}; // HELP
-int (*builtin_func[]) (char **) = {&run_echo, &run_cd, &run_ls, &run_pwd, &run_watch,
+int (*builtin_func[]) (char **) = {&run_echo ,&run_cd, &run_pwd, &run_watch,
  &run_exit, &run_pinfo , &run_setenv, &run_unsetenv, &run_jobs, &run_kjob, &run_fg, &run_bg,
  &run_overkill, &run_quit};
 
@@ -130,6 +130,7 @@ void shell_loop(void)
 {
 	int i,j;
 	char *in_line;
+	char copy_line[2000];
 	char **args;
 	int out = 1;
 	int *args_len = (int*)malloc(sizeof(int));
@@ -153,6 +154,7 @@ void shell_loop(void)
 			wd = cwd;
 		printf(KCYN "<%s@%s:~%s > " RESET, username, hostname, wd);
 		in_line = getCommand();
+		strcpy(copy_line, in_line);
 		commands = semicolonSeperator(in_line, semi_args_len);
 		
 		for (j = 0; j < *(semi_args_len); ++j)
@@ -164,7 +166,8 @@ void shell_loop(void)
 				{
 					in_line = idCommand(commands[j]);
 					// in_line = idCommand(in_line);
-					args = splitCommand(in_line, args_len);		
+					args = splitCommand(in_line, args_len);
+					strcpy(nowProcess, in_line);					
 					out = executeCommand(args, bg);
 				}
 				else
@@ -174,6 +177,9 @@ void shell_loop(void)
 						bg = 1;
 						in_line = idCommand(backArgs[i]);
 						args = splitCommand(backArgs[i], back_argCommand_len);		
+						printf("%s\n", in_line );
+					copy_line[strlen(copy_line) - 1] = '\0';	
+						strcpy(nowProcess, copy_line);					
 						out = executeCommand(args, bg);
 					}	
 					bg = 0;
@@ -316,7 +322,6 @@ int launchProcess(char **args, int bg)
 
 	pid = fork();
 	childPID = pid;
-	strcpy(nowProcess, args[0]);
 	if (pid == 0)
 	{
 		// signal(SIGINT, SIG_IGN);
@@ -399,14 +404,29 @@ int launchProcess(char **args, int bg)
 				if(isout)
 					dup2(outfd,1);	
 
-				int BI = runBuiltin(nowargs);
-				if(BI == 0)
-				{
-					if (execvp(nowargs[0], nowargs) == -1)
+				// int BI = runBuiltin(nowargs);
+				// if(BI == 0)
+				// {
+					if(nowargs[0] == "ls")
 					{
-						perror("Shell"); // Print Approporiate Error
+						run_ls(nowargs);
 					}
-				}
+					else if(nowargs[0] == "echo")
+					{
+						int cnt = 0;
+						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
+						{
+							printf("%s", nowargs[cnt]);
+						}
+					}
+					else
+					{ 
+						if (execvp(nowargs[0], nowargs) == -1)
+						{
+							perror("Shell"); // Print Approporiate Error
+						}
+					}
+					// }
 
 				if(isin)
 					close(infd);
@@ -459,14 +479,29 @@ int launchProcess(char **args, int bg)
 						if(isout)
 							dup2(outfd,1);						
 
-						int BI = runBuiltin(nowargs);
-						if(BI == 0)
+						// int BI = runBuiltin(nowargs);
+						// if(BI == 0)
+						// {
+					if(nowargs[0] == "ls")
+					{
+						run_ls(nowargs);
+					}
+					else if(nowargs[0] == "echo")
+					{
+						int cnt = 0;
+						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
 						{
-							if(execvp(nowargs[0], nowargs) == -1)
-							{
-								perror("Shell");
-							}
+							printf("%s", nowargs[cnt]);
 						}
+					}
+					else
+					{ 
+						if (execvp(nowargs[0], nowargs) == -1)
+						{
+							perror("Shell"); // Print Approporiate Error
+						}
+					}
+						// }
 
 						if(isin)
 							close(infd);
@@ -510,12 +545,29 @@ int launchProcess(char **args, int bg)
 				if(isout)
 					dup2(outfd,1);				
 
-				int BI = runBuiltin(nowargs);
-				if(BI == 0)
-				{
-					if(execvp(nowargs[0], nowargs) == -1)
-							perror("Shell");
-				}
+				// int BI = runBuiltin(nowargs);
+				// if(BI == 0)
+				// {
+					if(nowargs[0] == "ls")
+					{
+						run_ls(nowargs);
+					}
+					else if(nowargs[0] == "echo")
+					{
+						int cnt = 0;
+						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
+						{
+							printf("%s", nowargs[cnt]);
+						}
+					}
+					else
+					{ 
+						if (execvp(nowargs[0], nowargs) == -1)
+						{
+							perror("Shell"); // Print Approporiate Error
+						}
+					}
+				// }
 
 				if(isin)
 					close(infd);
@@ -549,8 +601,8 @@ int launchProcess(char **args, int bg)
 			kill(pid, SIGTTIN);
 			// kill(pid, SIGTSTP);
 			kill(pid, SIGCONT);
-			addtoLL(head, args[0], pid, 1);
-			printf(KMAG "[+] %d %s\n" RESET, pid, args[0]);
+			addtoLL(head, nowProcess, pid, 1);
+			printf(KMAG "[+] %d %s\n" RESET, pid, nowProcess);
 		}
 	}
 	else
@@ -583,16 +635,19 @@ int executeCommand(char **args, int bg)
 	if (args[0] == NULL)
 		return 1;
 
-	// int boss = runBuiltin(args);
-	// if(boss == 1)
-	// {
-	// 	// printf("Here\n");
-	// 	return 1;
-	// }
-	if(strcmp(args[0],"exit") == 0)
+	if(strcmp(args[0],"exit") == 0 || strcmp(args[0],"quit") == 0 )
 	{
-		return 0;
+		char *tosend[] = {""};
+		return run_exit(tosend);
 	}
+
+	int boss = runBuiltin(args);
+	if(boss == 1)
+	{
+		// printf("Here\n");
+		return 1;
+	}
+
 
 	// printf("%s\n", args[0]);
 	return launchProcess(args, bg);
