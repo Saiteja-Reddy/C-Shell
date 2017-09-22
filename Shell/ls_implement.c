@@ -33,7 +33,7 @@ int run_ls(char **args)
 			if(strlen(temp) == 1)
 			{
 				fileRead = 1;
-				printf(" - : No such file or directory\n");
+				fprintf(stderr," - : No such file or directory\n");
 			}
 		}
 		else
@@ -63,7 +63,7 @@ int printFileDir(char *temp, int flags[])
 	struct stat sb;
 	if (stat(temp, &sb) == -1)
 	{
-		printf("%s: No such file or directory\n", temp);
+		fprintf(stderr,"%s: No such file or directory\n", temp);
 		return 0;
 	}
 	if (S_ISDIR(sb.st_mode))

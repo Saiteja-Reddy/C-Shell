@@ -11,7 +11,7 @@ void printProcess(pid_t pid)
 	FILE * fd = fopen(buffer,"r");
 	if(fd == NULL)
 	{
-		printf(RED "There is no process with pid - %d\n" RESET, pid );
+		fprintf(stderr,RED "There is no process with pid - %d\n" RESET, pid );
 		return;
 	}
 	printf("pid -- %d\n\n",pid);
@@ -45,7 +45,7 @@ void getState(pid_t pid)
 	FILE * fd = fopen(buffer,"r");
 	if(fd == NULL)
 	{
-		printf(RED "Stopped\n" RESET );
+		fprintf(stderr,RED "Stopped\n" RESET );
 		return;
 	}
 	printf("pid -- %d\n\n",pid);
@@ -71,7 +71,7 @@ void printPinfo(char **args, int* args_len)
 		}
 		else if(*args_len >= 3)
 		{
-			printf(RED "pinfo: Too many arguments\nUsage: pinfo <pid>\n" RESET);
+			fprintf(stderr,RED "pinfo: Too many arguments\nUsage: pinfo <pid>\n" RESET);
 			return;
 		}
 		else
@@ -81,7 +81,7 @@ void printPinfo(char **args, int* args_len)
 			{
 				if(!(args[1][i] >= '0' && args[1][i] <= '9'))
 				{
-					printf(RED "pinfo: Please Enter a number for PID\n" RESET);
+					fprintf(stderr,RED "pinfo: Please Enter a number for PID\n" RESET);
 					return;
 				}
 			}
@@ -99,12 +99,12 @@ int run_pinfo(char **args)
 	int i;
 	int *count = (int*)malloc(sizeof(int));
 	*count = 0;
-	printf("IN Watch : %s\n", args[0]);
+	// printf("IN Watch : %s\n", args[0]);
 	for ( i = 0; args[i] != NULL; ++i)
 	{
 		*count = *count + 1;
 	}
-	printf("%d are no of args\n", count );
+	// printf("%d are no of args\n", count );
 	printPinfo(args, count);	
 	return 1;
 }

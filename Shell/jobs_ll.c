@@ -123,7 +123,7 @@ int killLL(qjob* head, pid_t pid, int sig)
 			{
 				curr-> next = now->next;
 				kill(pid, sig);
-				printf("Killed %d - %s\n" , pid, now->name);
+				fprintf(stderr,"Killed %d - %s\n" , pid, now->name);
 				free(now);
 				return 1;
 				break;
@@ -158,7 +158,7 @@ void printDoneJobs(qjob* head)
 			pid_t return_pid = waitpid(now->pid, NULL, WNOHANG);
 			if(return_pid == now->pid)
 			{
-				printf(KGRN "[-] Done %d %s\n" RESET, now->pid, now->name);
+				fprintf(stderr,KGRN "[-] Done %d %s\n" RESET, now->pid, now->name);
 				curr-> next = now->next;
 				free(now);
 			}

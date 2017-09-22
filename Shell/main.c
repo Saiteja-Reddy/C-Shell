@@ -104,7 +104,7 @@ void catchCTRL_Z(int sig)
 		kill(childPID, SIGTSTP);
 		// kill(childPID, SIGSTOP);
 		addtoLL(head, nowProcess , childPID, 0);		
-		printf(KMAG "[+] %d %s\n" RESET, childPID, nowProcess);		
+		fprintf(stderr,KMAG "[+] %d %s\n" RESET, childPID, nowProcess);		
 	}
 	// printLLsize(head);
 	signal(SIGTSTP, catchCTRL_Z);	
@@ -602,7 +602,7 @@ int launchProcess(char **args, int bg)
 			// kill(pid, SIGTSTP);
 			kill(pid, SIGCONT);
 			addtoLL(head, nowProcess, pid, 1);
-			printf(KMAG "[+] %d %s\n" RESET, pid, nowProcess);
+			fprintf(stderr,KMAG "[+] %d %s\n" RESET, pid, nowProcess);
 		}
 	}
 	else
@@ -705,9 +705,16 @@ int run_setenv(char **args)
 	// printf("%d\n", count );
 
 	if(count >=4)
-			printf(RED "setenv: Too many arguments\nUsage: setenv var [value]>\n" RESET);
-	else if(count <= 2)
-			printf(RED "setenv: Too few arguments\nUsage: setenv var [value]>\n" RESET);
+			fprintf(stderr,RED "setenv: Too many arguments\nUsage: setenv var [value]>\n" RESET);
+	else if(count <= 1)
+			fprintf(stderr,RED "setenv: Too few arguments\nUsage: setenv var [value]>\n" RESET);
+	else if(count == 2)
+	{
+		if(setenv(args[1], "", 1) == -1)
+		{
+			perror("Shell");
+		}			
+	}
 	else
 	{
 		if(setenv(args[1], args[2], 1) == -1)
@@ -727,9 +734,9 @@ int run_unsetenv(char **args)
 	// printf("%d\n", count );
 
 	if(count >=3)
-			printf(RED "setenv: Too many arguments\nUsage: setenv var [value]>\n" RESET);
+			fprintf(stderr,RED "unsetenv: Too many arguments\nUsage: setenv var [value]>\n" RESET);
 	else if(count <= 1)
-			printf(RED "setenv: Too few arguments\nUsage: setenv var [value]>\n" RESET);
+			fprintf(stderr,RED "unsetenv: Too few arguments\nUsage: setenv var [value]>\n" RESET);
 	else
 	{
 		if(unsetenv(args[1]) == -1)
@@ -756,9 +763,9 @@ int run_kjob(char **args) // make job number
 	// printf("%d\n", count );
 
 	if(count >=4)
-			printf(RED "kjob: Too many arguments\nUsage: kjob <jobNumber> <signalNumber>\n" RESET);
+			fprintf(stderr,RED "kjob: Too many arguments\nUsage: kjob <jobNumber> <signalNumber>\n" RESET);
 	else if(count <= 2)
-			printf(RED "kjob: Too few arguments\nUsage: kjob <jobNumber> <signalNumber>\n" RESET);
+			fprintf(stderr,RED "kjob: Too few arguments\nUsage: kjob <jobNumber> <signalNumber>\n" RESET);
 	else
 	{
 
@@ -772,7 +779,7 @@ int run_kjob(char **args) // make job number
 		}
 		else
 		{
-			printf("No such pid exists\n");
+			fprintf(stderr, RED "kjob: No such pid exists\n" RESET);
 		}
 
 	}
@@ -789,9 +796,9 @@ int run_fg(char **args)
 	// printf("%d\n", count );
 
 	if(count >=3)
-			printf(RED "fg: Too many arguments\nUsage: fg <jobNumber>\n" RESET);
+			fprintf(stderr,RED "fg: Too many arguments\nUsage: fg <jobNumber>\n" RESET);
 	else if(count <= 1)
-			printf(RED "fg: Too few arguments\nUsage: fg <jobNumber>\n" RESET);
+			fprintf(stderr,RED "fg: Too few arguments\nUsage: fg <jobNumber>\n" RESET);
 	else
 	{
 
@@ -812,7 +819,7 @@ int run_fg(char **args)
 		}
 		else
 		{
-			printf("No such pid exists\n");
+			fprintf(stderr,RED "fg: No such pid exists\n" RESET);
 		}
 	}
 
@@ -828,9 +835,9 @@ int run_bg(char **args) // make jobnumber
 	// printf("%d\n", count );
 
 	if(count >=3)
-			printf(RED "bg: Too many arguments\nUsage: bg <jobNumber>\n" RESET);
+			fprintf(stderr,RED "bg: Too many arguments\nUsage: bg <jobNumber>\n" RESET);
 	else if(count <= 1)
-			printf(RED "bg: Too few arguments\nUsage: bg <jobNumber>\n" RESET);
+			fprintf(stderr,RED "bg: Too few arguments\nUsage: bg <jobNumber>\n" RESET);
 	else
 	{
 
@@ -847,7 +854,7 @@ int run_bg(char **args) // make jobnumber
 		}
 		else
 		{
-			printf("No such pid exists\n");
+			fprintf(stderr,RED "bg: No such pid exists\n" RESET);
 		}
 
 	}
@@ -885,7 +892,14 @@ char** redirectCode(char **args, int *isin_p, int *isout_p, int *infd_p, int *ou
 		{
 			isin = 1;
 			if(counter > i + 1)
+			{
 				infd = open(args[++i], O_RDONLY);
+				if(infd == -1)
+				{
+				fprintf(stderr, RED "shell: Please enter a valid input file\n" RESET);
+				exit(1);					
+				}
+			}
 			else
 			{
 				fprintf(stderr, RED "shell: Please give an input file\n" RESET);
@@ -897,7 +911,9 @@ char** redirectCode(char **args, int *isin_p, int *isout_p, int *infd_p, int *ou
 		{
 			isout = 1;
 			if(counter > i + 1)
+			{
 				outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+			}
 			else
 			{
 				fprintf(stderr, RED "shell: Please give an output file to write to\n" RESET);

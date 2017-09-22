@@ -13,7 +13,7 @@ void printWatch(char **args, int* args_len)
 	int index = 0;
 	if(*args_len == 1)
 	{
-		printf(RED "nightswatch: Use nightswatch [options] <valid command>\nHere valid commands are 'interrupt' and 'dirty'\n" RESET);
+		fprintf(stderr,RED "nightswatch: Use nightswatch [options] <valid command>\nHere valid commands are 'interrupt' and 'dirty'\n" RESET);
 		optind = 1;
 		return;
 	}
@@ -38,7 +38,7 @@ void printWatch(char **args, int* args_len)
 			c = args[index][i];
 			if(!(c >= 48 && c <= 57))
 			{
-				printf(RED "nightswatch: failed to parse argument: '%s'\n" RESET, args[index] );
+				fprintf(stderr,RED "nightswatch: failed to parse argument: '%s'\n" RESET, args[index] );
 				optind = 1;
 				return;
 			}
@@ -47,7 +47,7 @@ void printWatch(char **args, int* args_len)
 	}
 	if(index + 1 == *args_len)
 	{
-		printf(RED "nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n" RESET);
+		fprintf(stderr,RED "nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n" RESET);
 		optind = 1;
 		return;
 	}
@@ -62,7 +62,7 @@ void printWatch(char **args, int* args_len)
 	}
 	else
 	{
-		printf(RED "nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n" RESET);
+		fprintf(stderr,RED "nightswatch:\n Use nightswatch [options] <valid command>\n Here valid commands are 'interrupt' and 'dirty'\n" RESET);
 		optind = 1;
 		return;
 	}
