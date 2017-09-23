@@ -225,19 +225,6 @@ char* idCommand(char * buffer)
 			free(args_len);
 			return cpBuffer;
 		}
-		// else if(strcmp(charg, "pinfo")==0)
-		// {
-		// //	printf("Pinfo must be executed\n");
-		// 	int *args_len = (int*)malloc(sizeof(int));
-		// 	char **args;
-		// 	args = splitCommand(buffer, args_len);	
-		// 	printPinfo(args, args_len);		
-
-		// 	free(args);
-		// 	free(args_len);
-		
-		// 	return cpBuffer;
-		// }
 	}
 	free(cpBuffer);
 	return buffer;
@@ -259,7 +246,6 @@ char **semicolonSeperator(char *line, int* semicolon_args_len)
 	while (arg != NULL)
 	{
 		args[position++] = arg;
-		// printf("%s\n", arg);		
 		arg = strtok(NULL, SEMICOLON_DELIMITERS);
 	}
 	args[position] = NULL;
@@ -283,7 +269,6 @@ char **splitBackCommand(char *line, int* back_args_len)
 	while (arg != NULL)
 	{
 		args[position++] = arg;
-		// printf("%s\n", arg);		
 		arg = strtok(NULL, BACK_DELIMITERS);
 	}
 	args[position] = NULL;
@@ -296,6 +281,7 @@ char **splitCommand(char *line, int* args_len)
 	unsigned long bufsize = TOKEN_BUFSIZE;
 	int position = 0;
 	char **args = malloc(sizeof(char*) * bufsize);
+	// printf("%d\n", bufsize );
 	char *arg;
 	if (!args)
 	{
@@ -310,9 +296,18 @@ char **splitCommand(char *line, int* args_len)
 		arg = strtok(NULL, DELIMITERS);
 	}
 	*args_len = position;
-	if(position%2 ==1)
-		args[position++] = 0;		
+	// printf("%d\n", *args_len );	
 	args[position] = NULL;
+	// int i;
+	// for (i = 0; i <= position; ++i)
+	// {
+	// 	if(args[i] == NULL)
+	// 	{
+	// 		printf("END Reached\n");
+	// 		break;
+	// 	}
+	// 	printf("%s\n", args[i] );
+	// }
 	return args;
 }
 
@@ -348,13 +343,14 @@ int launchProcess(char **args, int bg)
 		int args_pos = 0;
 		int pos = 0;
 		int inipos = 0;
-		for (int i = 0; args[i] != NULL; ++i)
+		int i;
+		for (i = 0; args[i] != NULL; ++i)
 		{
 			if(strcmp(args[i], "|") == 0)
 			{
 				ispiped = 1;
 				int largs = (pos - inipos);
-				char **nowargs = malloc(sizeof(char*) * largs);
+				char **nowargs = malloc(sizeof(char*) * 100);
 				int j = 0;
 				int k = 0;
 				for (j = inipos; j < inipos+largs; ++j)
@@ -368,15 +364,18 @@ int launchProcess(char **args, int bg)
 			pos = pos + 1;
 		}
 		int largs = (pos - inipos);
-		char **nowargs = (char**)malloc(sizeof(char*) * largs);
+		char **nowargs = (char**)malloc(sizeof(char*) * 1000);
 		int j = 0;
 		int k = 0;
+
 		for (j = inipos; j < inipos+largs; ++j)
 		{
 			nowargs[k++] = args[j];
 		}
 		nowargs[k++] = 0;
 		args_table[args_pos++] = nowargs;
+
+
 		if(ispiped == 0)
 		{
 			// printf("Here in no piped\n");
@@ -653,6 +652,82 @@ int executeCommand(char **args, int bg)
 	return launchProcess(args, bg);
 }
 
+char** redirectCode(char **args, int *isin_p, int *isout_p, int *infd_p, int *outfd_p, int* pos_p)
+{
+	int isin = 0;
+	int isout = 0;
+	int infd = 0;
+	int outfd = 1;
+	// printf("Here in RD\n");
+	char **nowargs = malloc(sizeof(char*) * 100);
+	// printf("Here in RD\n");
+	int pos = 0;
+	int nowargspos = 0;
+	int i, counter = 0;
+	for (i = 0; args[i] != NULL; ++i)
+		counter++;		
+	for (i = 0; args[i] != NULL; ++i)
+	{
+		if(strcmp(args[i], "<") == 0)
+		{
+			isin = 1;
+			if(counter > i + 1)
+			{
+				infd = open(args[++i], O_RDONLY);
+				if(infd == -1)
+				{
+				fprintf(stderr, RED "shell: Please enter a valid input file\n" RESET);
+				exit(1);					
+				}
+			}
+			else
+			{
+				fprintf(stderr, RED "shell: Please give an input file\n" RESET);
+				exit(1);
+			}
+
+		}
+		else if(strcmp(args[i], ">") == 0)
+		{
+			isout = 1;
+			if(counter > i + 1)
+			{
+				outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+			}
+			else
+			{
+				fprintf(stderr, RED "shell: Please give an output file to write to\n" RESET);
+				exit(1);
+			}				
+		}
+		else if(strcmp(args[i], ">>") == 0)
+		{
+			isout = 1;
+			if(counter > i + 1)
+				outfd = open(args[++i], O_WRONLY | O_APPEND | O_CREAT, 0644);
+			else
+			{
+				fprintf(stderr, RED "shell: Please give an output file to append\n" RESET);
+				exit(1);
+			}						
+		}			
+		else
+		{
+			nowargs[nowargspos++] = args[i];
+		}
+
+		pos = pos + 1;
+	}
+
+	*isin_p = isin;
+	*isout_p = isout;
+	*infd_p = infd;
+	*outfd_p = outfd;
+	*pos_p = pos;
+
+	return nowargs;
+}
+
 
 
 int run_cd(char **args)
@@ -871,79 +946,4 @@ int run_quit(char **args)
 {
 	// printf("IN quit");
 	return 0;
-}
-
-
-char** redirectCode(char **args, int *isin_p, int *isout_p, int *infd_p, int *outfd_p, int* pos_p)
-{
-	int isin = 0;
-	int isout = 0;
-	int infd = 0;
-	int outfd = 1;
-	char **nowargs = malloc(sizeof(char*) * 100);
-	int pos = 0;
-	int nowargspos = 0;
-	int i, counter = 0;
-	for (i = 0; args[i] != NULL; ++i)
-		counter++;		
-	for (i = 0; args[i] != NULL; ++i)
-	{
-		if(strcmp(args[i], "<") == 0)
-		{
-			isin = 1;
-			if(counter > i + 1)
-			{
-				infd = open(args[++i], O_RDONLY);
-				if(infd == -1)
-				{
-				fprintf(stderr, RED "shell: Please enter a valid input file\n" RESET);
-				exit(1);					
-				}
-			}
-			else
-			{
-				fprintf(stderr, RED "shell: Please give an input file\n" RESET);
-				exit(1);
-			}
-
-		}
-		else if(strcmp(args[i], ">") == 0)
-		{
-			isout = 1;
-			if(counter > i + 1)
-			{
-				outfd = open(args[++i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
-			}
-			else
-			{
-				fprintf(stderr, RED "shell: Please give an output file to write to\n" RESET);
-				exit(1);
-			}				
-		}
-		else if(strcmp(args[i], ">>") == 0)
-		{
-			isout = 1;
-			if(counter > i + 1)
-				outfd = open(args[++i], O_WRONLY | O_APPEND | O_CREAT, 0644);
-			else
-			{
-				fprintf(stderr, RED "shell: Please give an output file to append\n" RESET);
-				exit(1);
-			}						
-		}			
-		else
-		{
-			nowargs[nowargspos++] = args[i];
-		}
-
-		pos = pos + 1;
-	}
-
-	*isin_p = isin;
-	*isout_p = isout;
-	*infd_p = infd;
-	*outfd_p = outfd;
-	*pos_p = pos;
-
-	return nowargs;
 }
