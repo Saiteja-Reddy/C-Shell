@@ -77,7 +77,10 @@ Appropriate error codes have been implemented wherever deemed necessary.
 * The input is passed through a 'state-machine' type structure, so as to efficiently handle all the possible input types.
 * All the cases when characters such as "", '', spacing, multiple occurrences of quotes etc. have been handled properly including cases when newline is printed after opening quotes. 
 * Memory is dynamically allocated depending upon the size of the command.
-* The format input and output would emulate bash. 
+* The format input and output would emulate bash.
+* Two kinds of echo here:
+	* One - `echo` is normal echo - prints what you give it
+	* Two - `echoM` - is multiline echo - just like bash with quotes and the cool **State Machine** Implementation - was troublesome for it to work with piping so ignored this `echoM` for piping. 
 
 ### pinfo:
 
