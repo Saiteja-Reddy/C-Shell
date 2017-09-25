@@ -410,7 +410,7 @@ int launchProcess(char **args, int bg)
 					{
 						run_ls(nowargs);
 					}
-					else if(strcmp(nowargs[0], "echo"))
+					else if(strcmp(nowargs[0], "echo") == 0)
 					{
 						int cnt = 0;
 						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
@@ -485,7 +485,7 @@ int launchProcess(char **args, int bg)
 					{
 						run_ls(nowargs);
 					}
-					else if(strcmp(nowargs[0], "echo"))
+					else if(strcmp(nowargs[0], "echo") == 0)
 					{
 						int cnt = 0;
 						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
@@ -551,7 +551,7 @@ int launchProcess(char **args, int bg)
 					{
 						run_ls(nowargs);
 					}
-					else if(strcmp(nowargs[0], "echo"))
+					else if(strcmp(nowargs[0], "echo") == 0)
 					{
 						int cnt = 0;
 						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
