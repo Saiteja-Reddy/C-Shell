@@ -412,11 +412,12 @@ int launchProcess(char **args, int bg)
 					}
 					else if(strcmp(nowargs[0], "echo") == 0)
 					{
-						int cnt = 0;
-						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
+						int cnt = 1;
+						for(cnt = 1; nowargs[cnt] != NULL; cnt++)
 						{
-							printf("%s", nowargs[cnt]);
+							printf("%s ", nowargs[cnt]);
 						}
+						printf("\n");
 					}
 					else
 					{ 
@@ -487,11 +488,12 @@ int launchProcess(char **args, int bg)
 					}
 					else if(strcmp(nowargs[0], "echo") == 0)
 					{
-						int cnt = 0;
-						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
+						int cnt = 1;
+						for(cnt = 1; nowargs[cnt] != NULL; cnt++)
 						{
-							printf("%s", nowargs[cnt]);
+							printf("%s ", nowargs[cnt]);
 						}
+						printf("\n");
 					}
 					else
 					{ 
@@ -553,11 +555,12 @@ int launchProcess(char **args, int bg)
 					}
 					else if(strcmp(nowargs[0], "echo") == 0)
 					{
-						int cnt = 0;
-						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
+						int cnt = 1;
+						for(cnt = 1; nowargs[cnt] != NULL; cnt++)
 						{
-							printf("%s", nowargs[cnt]);
+							printf("%s ", nowargs[cnt]);
 						}
+						printf("\n");
 					}
 					else
 					{ 
@@ -639,6 +642,7 @@ int executeCommand(char **args, int bg)
 		char *tosend[] = {""};
 		return run_exit(tosend);
 	}
+
 
 	int boss = runBuiltin(args);
 	if(boss == 1)
