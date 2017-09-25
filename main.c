@@ -56,9 +56,9 @@ char hostname[256];
 char username[256];
 char cwd[2017];
 char *wd;
-char *builtin[] = {"echoM" , "cd", "pwd", "nightswatch",  "exit","pinfo" , 
+char *builtin[] = {"echoM" , "cd", "pwd",  "exit","pinfo" , 
 "setenv", "unsetenv", "jobs", "kjob", "fg", "bg", "overkill", "quit"}; // HELP
-int (*builtin_func[]) (char **) = {&run_echo ,&run_cd, &run_pwd, &run_watch,
+int (*builtin_func[]) (char **) = {&run_echo ,&run_cd, &run_pwd,
  &run_exit, &run_pinfo , &run_setenv, &run_unsetenv, &run_jobs, &run_kjob, &run_fg, &run_bg,
  &run_overkill, &run_quit};
 
@@ -634,8 +634,10 @@ int executeCommand(char **args, int bg)
 {
 	// if(bg == 1)
 		// printf("Background Must be Run\n");
-	if (args[0] == NULL)
+	if (args[0] == NULL || strcmp(args[0],"nightswatch") == 0)
+	{		
 		return 1;
+	}
 
 	if(strcmp(args[0],"exit") == 0 || strcmp(args[0],"quit") == 0 )
 	{
@@ -643,11 +645,9 @@ int executeCommand(char **args, int bg)
 		return run_exit(tosend);
 	}
 
-
 	int boss = runBuiltin(args);
 	if(boss == 1)
 	{
-		// printf("Here\n");
 		return 1;
 	}
 
