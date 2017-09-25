@@ -122,6 +122,7 @@ int killLL(qjob* head, pid_t pid, int sig)
 			if(now->pid == pid)
 			{
 				curr-> next = now->next;
+				kill(pid, 17);
 				kill(pid, sig);
 				fprintf(stderr,"Killed %d - %s\n" , pid, now->name);
 				free(now);

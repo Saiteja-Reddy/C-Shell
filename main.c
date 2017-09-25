@@ -406,11 +406,11 @@ int launchProcess(char **args, int bg)
 				// int BI = runBuiltin(nowargs);
 				// if(BI == 0)
 				// {
-					if(nowargs[0] == "ls")
+					if(strcmp(nowargs[0],"ls") == 0)
 					{
 						run_ls(nowargs);
 					}
-					else if(nowargs[0] == "echo")
+					else if(strcmp(nowargs[0], "echo"))
 					{
 						int cnt = 0;
 						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
@@ -481,11 +481,11 @@ int launchProcess(char **args, int bg)
 						// int BI = runBuiltin(nowargs);
 						// if(BI == 0)
 						// {
-					if(nowargs[0] == "ls")
+					if(strcmp(nowargs[0],"ls") == 0)
 					{
 						run_ls(nowargs);
 					}
-					else if(nowargs[0] == "echo")
+					else if(strcmp(nowargs[0], "echo"))
 					{
 						int cnt = 0;
 						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
@@ -547,11 +547,11 @@ int launchProcess(char **args, int bg)
 				// int BI = runBuiltin(nowargs);
 				// if(BI == 0)
 				// {
-					if(nowargs[0] == "ls")
+					if(strcmp(nowargs[0],"ls") == 0)
 					{
 						run_ls(nowargs);
 					}
-					else if(nowargs[0] == "echo")
+					else if(strcmp(nowargs[0], "echo"))
 					{
 						int cnt = 0;
 						for(cnt = 0; nowargs[cnt] != NULL; cnt++)
@@ -940,6 +940,7 @@ int run_overkill(char **args)
 {
 	// printf("IN overkill");
 	killALL(head);
+	// printf("Done\n");
 	return 1;
 }
 int run_quit(char **args)
